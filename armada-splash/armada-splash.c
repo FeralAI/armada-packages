@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <linux/fb.h>
 #include <linux/kd.h>
+#include <math.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdint.h>
@@ -182,10 +183,10 @@ static void compose(const char *status) {
         int margin = g_gap >= 0 ? g_gap : g_text_px;
         text_top = SH - margin - text_block_h;
     } else {
-        int gap = img_h ? (g_gap >= 0 ? g_gap : (g_ttf_ok ? g_text_px / 2 : text_scale * 4)) : 0;
-        int top = (SH - (img_h + gap + text_block_h)) / 2;
-        logo_y = top;
-        text_top = top + img_h + gap;
+        // Logo position ignores the text so the image never jumps as lines change.
+        int gap = img_h ? (g_gap >= 0 ? g_gap : (g_ttf_ok ? 7 * g_text_px / 4 : 14 * text_scale)) : 0;
+        logo_y = (SH - img_h) / 2;
+        text_top = logo_y + img_h + gap;
     }
     if (logo_y < 0) logo_y = 0;
     if (text_top < 0) text_top = 0;
@@ -228,6 +229,38 @@ static int load_image(const char *path) {
     close(fd);
     if (off != sz) { fprintf(stderr, "armada-splash: short image\n"); free(img); img = NULL; return 0; }
     return 1;
+}
+
+// Bilinear-scale the logo so one asset keeps its proportion at every resolution.
+static void scale_logo(int th) {
+    if (!img || th <= 0 || th == img_h) return;
+    int tw = (int)((long long)img_w * th / img_h); if (tw < 1) tw = 1;
+    uint32_t *ni = malloc((size_t)tw * th * 4);
+    if (!ni) return;
+    for (int y = 0; y < th; y++) {
+        float sy = (y + 0.5f) * img_h / th - 0.5f;
+        int y0 = (int)floorf(sy); float fy = sy - y0;
+        int y1 = y0 + 1;
+        if (y0 < 0) y0 = 0;
+        if (y1 >= img_h) y1 = img_h - 1;
+        for (int x = 0; x < tw; x++) {
+            float sx = (x + 0.5f) * img_w / tw - 0.5f;
+            int x0 = (int)floorf(sx); float fx = sx - x0;
+            int x1 = x0 + 1;
+            if (x0 < 0) x0 = 0;
+            if (x1 >= img_w) x1 = img_w - 1;
+            uint32_t c00 = img[y0 * img_w + x0], c01 = img[y0 * img_w + x1];
+            uint32_t c10 = img[y1 * img_w + x0], c11 = img[y1 * img_w + x1];
+            uint32_t out = 0xFF000000;
+            for (int s = 0; s < 24; s += 8) {
+                float v = ((c00 >> s & 255) * (1 - fx) + (c01 >> s & 255) * fx) * (1 - fy)
+                        + ((c10 >> s & 255) * (1 - fx) + (c11 >> s & 255) * fx) * fy;
+                out |= (uint32_t)(v + 0.5f) << s;
+            }
+            ni[y * tw + x] = out;
+        }
+    }
+    free(img); img = ni; img_w = tw; img_h = th;
 }
 
 // Poll the whole file each call (not mtime) so same-second updates are caught.
@@ -473,14 +506,18 @@ int main(int argc, char **argv) {
     shadow = malloc((size_t)SW * SH * 4);
     if (!shadow) { fprintf(stderr, "armada-splash: OOM\n"); return 1; }
     g_text_px_req = atoi(arg(argc, argv, "--text-height", "0"));
-    text_scale = SW / 540; if (text_scale < 2) text_scale = 2;
-    g_text_px = g_text_px_req > 0 ? g_text_px_req : SW / 26;
+    // Short-axis sizing keeps text height equal in portrait and landscape modes.
+    int text_ref = SW < SH ? SW : SH;
+    text_scale = text_ref / 540; if (text_scale < 2) text_scale = 2;
+    g_text_px = g_text_px_req > 0 ? g_text_px_req : text_ref / 20;
     if (g_text_px < 14) g_text_px = 14;
     g_gap = atoi(arg(argc, argv, "--gap", "-1"));
     if (!strcmp(arg(argc, argv, "--layout", "group"), "split")) g_layout = 1;
     g_appid = (uint32_t)strtoul(arg(argc, argv, "--appid", "0x41524d41"), NULL, 0);
     load_font(arg(argc, argv, "--font", "/usr/share/armada/splash/font.ttf"), g_text_px);
     load_image(image);
+    int logo_px = atoi(arg(argc, argv, "--logo-height", "0"));
+    scale_logo(logo_px > 0 ? logo_px : text_ref / 4);
 
     read_status(status, g_cur, sizeof g_cur);
     compose(g_cur);
