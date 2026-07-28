@@ -9,6 +9,16 @@ on:
         description: "Image name suffix under ghcr.io/<owner>/armada-packages/"
         required: true
         type: string
+      runner:
+        description: "Runner to build on. Cross-compiled packages can use x86_64."
+        required: false
+        type: string
+        default: ubuntu-24.04-arm
+      image_arch:
+        description: "Arch to label the carrier image with when it differs from the runner"
+        required: false
+        type: string
+        default: ""
     outputs:
       digest:
         description: "The pushed image digest (pin this in armada's Containerfile)"
@@ -16,7 +26,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04-arm   # native aarch64; free for public repos
+    runs-on: ${{ inputs.runner }}   # default is native aarch64; free for public repos
     concurrency:
       group: ${{ inputs.package }}-image
       cancel-in-progress: true
@@ -60,7 +70,11 @@ jobs:
         id: push
         run: |
           TAG="$(date -u +%Y%m%d)-${GITHUB_SHA::8}"
-          buildah build -f oci/Containerfile -t "${IMAGE}:${TAG}" .
+          ARCH_FLAG=()
+          if [ -n "${{ inputs.image_arch }}" ]; then
+            ARCH_FLAG=(--arch "${{ inputs.image_arch }}")
+          fi
+          buildah build "${ARCH_FLAG[@]}" -f oci/Containerfile -t "${IMAGE}:${TAG}" .
           buildah tag "${IMAGE}:${TAG}" "${IMAGE}:latest"
           echo "${{ secrets.GITHUB_TOKEN }}" | buildah login -u "${{ github.actor }}" --password-stdin ghcr.io
           buildah push "${IMAGE}:${TAG}"

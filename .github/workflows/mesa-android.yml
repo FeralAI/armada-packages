@@ -1,0 +1,19 @@
+name: mesa-android
+on:
+  push:
+    branches: [main]
+    paths: ['mesa-android/**', 'mesa/patches/**', 'mesa/BASE.env', 'oci/**', '.github/workflows/mesa-android.yml', '.github/workflows/_package-image.yml', 'toolchain.env']
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+jobs:
+  build:
+    uses: ./.github/workflows/_package-image.yml
+    secrets: inherit
+    with:
+      package: mesa-android
+      # Cross-compiled, so x86_64 is native here; the artifacts stay Android arm64.
+      runner: ubuntu-24.04
+      image_arch: arm64
