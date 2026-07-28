@@ -9,10 +9,15 @@ source ./BASE.env
 source ../toolchain.env
 
 SRPM_NVR="$SRPM"
-MESA_VER="${SRPM_NVR#mesa-}"
-MESA_VER="${MESA_VER%%-*}"
+SRPM_VER="${SRPM_NVR#mesa-}"
+SRPM_VER="${SRPM_VER%%-*}"
+MESA_VER="${VERSION:-${SRPM_VER}}"
+SOURCE_URL="${SOURCE_URL:-}"
+SOURCE_SHA256="${SOURCE_SHA256:-}"
+SOURCE_TARBALL="${SOURCE_URL##*/}"
 
-# Rawhide SRPM (BASE.env pins the fcNN) rebuilt on fedora:44 for the runtime ABI.
+# The pinned Rawhide SRPM supplies Fedora's packaging; SOURCE_URL can replace its
+# Mesa source for prereleases. Packages target the fedora:44 runtime ABI.
 DIST=".fc44.armada"
 SUBPKGS="mesa-filesystem mesa-libgbm mesa-dri-drivers mesa-vulkan-drivers mesa-libGL mesa-libEGL"
 
@@ -33,7 +38,7 @@ podman run --rm \
   "${BUILDER_IMAGE}" \
   bash -euxo pipefail -c "
         export HOME=/tmp
-        dnf -y install rpm-build rpmdevtools koji 'dnf-command(builddep)' ccache
+        dnf -y install rpm-build rpmdevtools koji 'dnf-command(builddep)' ccache curl
         export PATH=/usr/lib64/ccache:\$PATH CC=gcc CXX=g++
         ccache -z
         rpmdev-setuptree
@@ -47,8 +52,26 @@ EOF
         rpm -i ${SRPM_NVR}.src.rpm
         SPEC=\$HOME/rpmbuild/SPECS/mesa.spec
 
+        sed -i 's/^Version:.*/Version:        ${MESA_VER}/' \"\$SPEC\"
         sed -i 's/^Release:.*%autorelease.*/Release:        1%{?dist}/' \"\$SPEC\"
         sed -i '/^%autochangelog/d' \"\$SPEC\"
+
+        if [ -n '${SOURCE_URL}' ]; then
+            [ -n '${SOURCE_SHA256}' ] || { echo 'ERROR: SOURCE_SHA256 is required with SOURCE_URL'; exit 1; }
+            curl --fail --location --retry 3 '${SOURCE_URL}' \
+                --output \"\$HOME/rpmbuild/SOURCES/${SOURCE_TARBALL}\"
+            printf '%s  %s\n' '${SOURCE_SHA256}' \
+                \"\$HOME/rpmbuild/SOURCES/${SOURCE_TARBALL}\" | \
+                sha256sum --check --status --strict
+
+            # Mesa 26.2 split driver defaults out of the aggregate drirc files.
+            for config in asahi d3d12 msm panfrost r300 r600 radeonsi v3d virtio_gpu vmwgfx zink; do
+                sed -i \"/^%files dri-drivers\$/a %{_datadir}/drirc.d/00-\${config}-defaults.conf\" \"\$SPEC\"
+            done
+            for config in dzn hk lavapipe nvk panvk pvr turnip v3dv venus; do
+                sed -i \"/^%files vulkan-drivers\$/a %{_datadir}/drirc.d/00-\${config}-defaults.conf\" \"\$SPEC\"
+            done
+        fi
 
         LAST=\$(grep -nE '^(Patch|Source)[0-9]*:' \"\$SPEC\" | tail -1 | cut -d: -f1)
         [ -n \"\$LAST\" ] || { echo 'ERROR: no Source/Patch line to anchor the patch on'; exit 1; }
