@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
@@ -278,7 +277,6 @@ static void read_status(const char *path, char *out, size_t n) {
 
 struct fbdev {
     int fd, ttyfd, prev_kd;
-    uint8_t *map; size_t maplen; long dataoff;
     int fbw, fbh, bpp, stride, angle;
     int roff, rlen, goff, glen, boff, blen;
 };
@@ -320,12 +318,6 @@ static int fb_open(const char *dev, int angle) {
         fprintf(stderr, "armada-splash: fb geometry exceeds smem_len\n"); return 0;
     }
 
-    long pgoff = (long)f.smem_start % sysconf(_SC_PAGESIZE);
-    fbd.maplen = (size_t)f.smem_len + pgoff;
-    fbd.map = mmap(NULL, fbd.maplen, PROT_READ | PROT_WRITE, MAP_SHARED, fbd.fd, 0);
-    if (fbd.map == MAP_FAILED) { fprintf(stderr, "armada-splash: mmap fb: %s\n", strerror(errno)); return 0; }
-    fbd.dataoff = pgoff;
-
     // After a compositor exits the fbdev may be FB_BLANK_POWERDOWN; unblank or
     // writes land in memory that is not scanned out.
     ioctl(fbd.fd, FBIOBLANK, FB_BLANK_UNBLANK);
@@ -358,23 +350,28 @@ static inline uint32_t fb_pack(uint32_t argb) {
            fb_chan(argb & 0xff, fbd.blen, fbd.boff);
 }
 
+// SM8550 DRM fbdev emulation backs an mmap with a shadow buffer whose damage
+// never reaches scanout; pwrite always flushes.
 static void fb_present(void) {
     int Bpp = fbd.bpp >> 3;
-    for (int ly = 0; ly < SH; ly++) {
-        for (int lx = 0; lx < SW; lx++) {
-            int px, py;
+    uint8_t *row = malloc((size_t)fbd.fbw * Bpp);
+    if (!row) return;
+    for (int py = 0; py < fbd.fbh; py++) {
+        for (int px = 0; px < fbd.fbw; px++) {
+            int lx, ly;
             switch (fbd.angle) {
-                case 90:  px = fbd.fbw - 1 - ly; py = lx; break;
-                case 180: px = fbd.fbw - 1 - lx; py = fbd.fbh - 1 - ly; break;
-                case 270: px = ly; py = fbd.fbh - 1 - lx; break;
-                default:  px = lx; py = ly; break;
+                case 90:  ly = fbd.fbw - 1 - px; lx = py; break;
+                case 180: lx = fbd.fbw - 1 - px; ly = fbd.fbh - 1 - py; break;
+                case 270: ly = px; lx = fbd.fbh - 1 - py; break;
+                default:  lx = px; ly = py; break;
             }
-            if (px < 0 || px >= fbd.fbw || py < 0 || py >= fbd.fbh) continue;
-            uint32_t v = fb_pack(shadow[ly * SW + lx]);
-            uint8_t *dst = fbd.map + fbd.dataoff + (size_t)py * fbd.stride + (size_t)px * Bpp;
-            for (int k = 0; k < Bpp; k++) dst[k] = (v >> (k * 8)) & 0xff;
+            uint32_t v = (lx >= 0 && lx < SW && ly >= 0 && ly < SH)
+                       ? fb_pack(shadow[ly * SW + lx]) : fb_pack(0xFF000000);
+            for (int k = 0; k < Bpp; k++) row[px * Bpp + k] = (v >> (k * 8)) & 0xff;
         }
+        if (pwrite(fbd.fd, row, (size_t)fbd.fbw * Bpp, (off_t)py * fbd.stride) < 0) break;
     }
+    free(row);
 }
 
 // ================= x11 backend (Xwayland under gamescope) =================
@@ -390,6 +387,23 @@ static Display *x_dpy;
 static Window x_win;
 static GC x_gc;
 static XImage *x_img;
+static Atom a_focused_win;
+static int g_was_shown;
+
+// g_was_shown guards the startup ordering where the focus atom names this
+// window before it is mapped, so a later focus change means real displacement.
+static void x11_check_focus(void) {
+    Atom type; int fmt; unsigned long n, after; unsigned char *data = NULL;
+    unsigned long val = 0;
+    if (XGetWindowProperty(x_dpy, DefaultRootWindow(x_dpy), a_focused_win, 0, 1,
+                           False, AnyPropertyType, &type, &fmt, &n, &after,
+                           &data) == Success && data) {
+        if (n && fmt == 32) val = *(unsigned long *)data;
+        XFree(data);
+    }
+    if (val == (unsigned long)x_win) g_was_shown = 1;
+    else if (g_was_shown) { fprintf(stderr, "armada-splash: displaced; exiting\n"); running = 0; }
+}
 
 static int x11_init(void) {
     if (!x_dpy) x_dpy = XOpenDisplay(NULL);   // may already be open (sized in main)
@@ -404,6 +418,10 @@ static int x11_init(void) {
                     XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&g_appid, 1);
     XStoreName(x_dpy, x_win, "armada-splash");
     XSelectInput(x_dpy, x_win, ExposureMask | StructureNotifyMask);
+    // gamescope's DISPLAY focus; X input focus ping-pongs to Steam's invisible
+    // windows during bring-up and is useless for takeover detection.
+    a_focused_win = XInternAtom(x_dpy, "GAMESCOPE_FOCUSED_WINDOW", False);
+    XSelectInput(x_dpy, RootWindow(x_dpy, scr), PropertyChangeMask);
     XMapWindow(x_dpy, x_win);
     x_gc = XCreateGC(x_dpy, x_win, 0, NULL);
     // shadow is ARGB8888, i.e. X 24/32-bit TrueColor LSBFirst; use it directly.
@@ -412,6 +430,7 @@ static int x11_init(void) {
     if (!x_img) { fprintf(stderr, "armada-splash: XCreateImage failed\n"); return 0; }
     x_img->byte_order = LSBFirst;
     XFlush(x_dpy);
+    x11_check_focus();
     return 1;
 }
 
@@ -541,6 +560,8 @@ int main(int argc, char **argv) {
                     XEvent ev; XNextEvent(x_dpy, &ev);
                     if (ev.type == Expose) x11_present();
                     else if (ev.type == ConfigureNotify) x11_resize(ev.xconfigure.width, ev.xconfigure.height);
+                    else if (ev.type == PropertyNotify && ev.xproperty.atom == a_focused_win)
+                        x11_check_focus();
                 }
             if (fds[1].revents & POLLIN) {
                 uint64_t x; ssize_t rr = read(tfd, &x, sizeof x); (void)rr;
