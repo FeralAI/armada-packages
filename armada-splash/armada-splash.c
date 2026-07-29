@@ -98,6 +98,7 @@ static int load_font(const char *path, int px) {
     struct stat st;
     if (fstat(fd, &st) != 0 || st.st_size <= 0) { close(fd); return 0; }
     g_ttf_buf = malloc(st.st_size);
+    if (!g_ttf_buf) { close(fd); return 0; }
     size_t off = 0; ssize_t r;
     while (off < (size_t)st.st_size && (r = read(fd, g_ttf_buf + off, st.st_size - off)) > 0) off += r;
     close(fd);
@@ -223,6 +224,7 @@ static int load_image(const char *path) {
     }
     size_t sz = (size_t)img_w * img_h * 4;
     img = malloc(sz);
+    if (!img) { close(fd); return 0; }
     size_t off = 0; ssize_t r;
     while (off < sz && (r = read(fd, (uint8_t *)img + off, sz - off)) > 0) off += r;
     close(fd);
@@ -350,7 +352,7 @@ static inline uint32_t fb_pack(uint32_t argb) {
            fb_chan(argb & 0xff, fbd.blen, fbd.boff);
 }
 
-// SM8550 DRM fbdev emulation backs an mmap with a shadow buffer whose damage
+// drm/msm fbdev emulation backs an mmap with a shadow buffer whose damage
 // never reaches scanout; pwrite always flushes.
 static void fb_present(void) {
     int Bpp = fbd.bpp >> 3;
@@ -446,8 +448,10 @@ static void x11_resize(int w, int h) {
     uint32_t *ns = realloc(shadow, (size_t)w * h * 4);
     if (!ns) return;
     shadow = ns; SW = w; SH = h;
-    text_scale = SW / 540; if (text_scale < 2) text_scale = 2;
-    g_text_px = g_text_px_req > 0 ? g_text_px_req : SW / 26;
+    // Same short-axis sizing as startup, or text changes size on rotation.
+    int ref = SW < SH ? SW : SH;
+    text_scale = ref / 540; if (text_scale < 2) text_scale = 2;
+    g_text_px = g_text_px_req > 0 ? g_text_px_req : ref / 20;
     if (g_text_px < 14) g_text_px = 14;
     if (g_ttf_ok) g_ttf_scale = stbtt_ScaleForPixelHeight(&g_ttf, (float)g_text_px);
     if (x_img) { x_img->data = NULL; XDestroyImage(x_img); }   // don't free shadow (aliased)
