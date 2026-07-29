@@ -44,7 +44,11 @@ jobs:
 
       - name: Tooling
         run: |
-          sudo apt-get update -y && sudo apt-get install -y podman buildah ccache
+          sudo apt-get update -y && sudo apt-get install -y podman buildah ccache runc
+          # Runner-image crun mismatches podman ("crun: unknown version
+          # specified"); runc is version-stable.
+          mkdir -p ~/.config/containers
+          printf '[engine]\nruntime = "runc"\n' > ~/.config/containers/containers.conf
           mkdir -p "${CCACHE_DIR}"
 
       # Opt-in lives in each build.sh: only those that wire up ccache populate
