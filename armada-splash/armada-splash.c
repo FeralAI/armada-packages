@@ -28,6 +28,13 @@
 
 static volatile sig_atomic_t running = 1;
 static void on_signal(int s) { (void)s; running = 0; }
+// No SA_RESTART: a TERM must interrupt blocked syscalls, not restart them.
+static void install_signal(int sig) {
+    struct sigaction sa = { 0 };
+    sa.sa_handler = on_signal;
+    sigemptyset(&sa.sa_mask);
+    sigaction(sig, &sa, NULL);
+}
 
 // For fbdev 90/270 rotation, SW/SH are the panel dimensions swapped.
 static int SW, SH;
@@ -191,7 +198,7 @@ static void compose(const char *status) {
     if (logo_y < 0) logo_y = 0;
     if (text_top < 0) text_top = 0;
 
-    if (img_w && img_h)
+    if (img && img_w && img_h)
         for (int y = 0; y < img_h; y++)
             for (int x = 0; x < img_w; x++)
                 put_shadow(logo_x + x, logo_y + y, img[y * img_w + x]);
@@ -220,38 +227,51 @@ static int load_image(const char *path) {
     img_h = hdr[8] | hdr[9] << 8 | hdr[10] << 16 | (uint32_t)hdr[11] << 24;
     if (img_w <= 0 || img_h <= 0 || img_w > 8192 || img_h > 8192) {
         fprintf(stderr, "armada-splash: bad image dims %dx%d\n", img_w, img_h);
-        close(fd); return 0;
+        img_w = img_h = 0; close(fd); return 0;
     }
     size_t sz = (size_t)img_w * img_h * 4;
     img = malloc(sz);
-    if (!img) { close(fd); return 0; }
+    if (!img) { img_w = img_h = 0; close(fd); return 0; }
     size_t off = 0; ssize_t r;
     while (off < sz && (r = read(fd, (uint8_t *)img + off, sz - off)) > 0) off += r;
     close(fd);
-    if (off != sz) { fprintf(stderr, "armada-splash: short image\n"); free(img); img = NULL; return 0; }
+    if (off != sz) {
+        fprintf(stderr, "armada-splash: short image\n");
+        free(img); img = NULL; img_w = img_h = 0; return 0;
+    }
     return 1;
 }
 
-// Bilinear-scale the logo so one asset keeps its proportion at every resolution.
+// Bilinear-scale the logo from the untouched original so a compositor resize
+// re-derives the size without compounding quality loss.
+static uint32_t *img_src;
+static int img_src_w, img_src_h;
+static int g_logo_px_req = 0;   // --logo-height (0 = auto from short axis)
+
 static void scale_logo(int th) {
-    if (!img || th <= 0 || th == img_h) return;
-    int tw = (int)((long long)img_w * th / img_h); if (tw < 1) tw = 1;
+    if (!img_src || th <= 0 || (img && th == img_h)) return;
+    if (th == img_src_h) {
+        if (img != img_src) free(img);
+        img = img_src; img_w = img_src_w; img_h = img_src_h;
+        return;
+    }
+    int tw = (int)((long long)img_src_w * th / img_src_h); if (tw < 1) tw = 1;
     uint32_t *ni = malloc((size_t)tw * th * 4);
     if (!ni) return;
     for (int y = 0; y < th; y++) {
-        float sy = (y + 0.5f) * img_h / th - 0.5f;
+        float sy = (y + 0.5f) * img_src_h / th - 0.5f;
         int y0 = (int)floorf(sy); float fy = sy - y0;
         int y1 = y0 + 1;
         if (y0 < 0) y0 = 0;
-        if (y1 >= img_h) y1 = img_h - 1;
+        if (y1 >= img_src_h) y1 = img_src_h - 1;
         for (int x = 0; x < tw; x++) {
-            float sx = (x + 0.5f) * img_w / tw - 0.5f;
+            float sx = (x + 0.5f) * img_src_w / tw - 0.5f;
             int x0 = (int)floorf(sx); float fx = sx - x0;
             int x1 = x0 + 1;
             if (x0 < 0) x0 = 0;
-            if (x1 >= img_w) x1 = img_w - 1;
-            uint32_t c00 = img[y0 * img_w + x0], c01 = img[y0 * img_w + x1];
-            uint32_t c10 = img[y1 * img_w + x0], c11 = img[y1 * img_w + x1];
+            if (x1 >= img_src_w) x1 = img_src_w - 1;
+            uint32_t c00 = img_src[y0 * img_src_w + x0], c01 = img_src[y0 * img_src_w + x1];
+            uint32_t c10 = img_src[y1 * img_src_w + x0], c11 = img_src[y1 * img_src_w + x1];
             uint32_t out = 0xFF000000;
             for (int s = 0; s < 24; s += 8) {
                 float v = ((c00 >> s & 255) * (1 - fx) + (c01 >> s & 255) * fx) * (1 - fy)
@@ -261,15 +281,19 @@ static void scale_logo(int th) {
             ni[y * tw + x] = out;
         }
     }
-    free(img); img = ni; img_w = tw; img_h = th;
+    if (img != img_src) free(img);
+    img = ni; img_w = tw; img_h = th;
 }
 
 // Poll the whole file each call (not mtime) so same-second updates are caught.
+// The dir is user-writable and this can run as root: regular files only.
 static void read_status(const char *path, char *out, size_t n) {
     out[0] = 0;
     if (!path) return;
-    int fd = open(path, O_RDONLY);
+    int fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) return;
+    struct stat st;
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) { close(fd); return; }
     ssize_t r = read(fd, out, n - 1);
     close(fd);
     out[r < 0 ? 0 : r] = 0;
@@ -404,7 +428,8 @@ static void x11_check_focus(void) {
         XFree(data);
     }
     if (val == (unsigned long)x_win) g_was_shown = 1;
-    else if (g_was_shown) { fprintf(stderr, "armada-splash: displaced; exiting\n"); running = 0; }
+    // Zero/absent = transient focus clear, not displacement.
+    else if (g_was_shown && val != 0) { fprintf(stderr, "armada-splash: displaced; exiting\n"); running = 0; }
 }
 
 static int x11_init(void) {
@@ -416,8 +441,10 @@ static int x11_init(void) {
     x_win = XCreateWindow(x_dpy, RootWindow(x_dpy, scr), 0, 0, SW, SH, 0,
                           DefaultDepth(x_dpy, scr), InputOutput,
                           DefaultVisual(x_dpy, scr), CWBackPixel, &a);
+    // Xlib format-32 properties marshal from an array of long, not uint32_t.
+    unsigned long appid_l = g_appid;
     XChangeProperty(x_dpy, x_win, XInternAtom(x_dpy, "STEAM_GAME", False),
-                    XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&g_appid, 1);
+                    XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&appid_l, 1);
     XStoreName(x_dpy, x_win, "armada-splash");
     XSelectInput(x_dpy, x_win, ExposureMask | StructureNotifyMask);
     // gamescope's DISPLAY focus; X input focus ping-pongs to Steam's invisible
@@ -454,6 +481,7 @@ static void x11_resize(int w, int h) {
     g_text_px = g_text_px_req > 0 ? g_text_px_req : ref / 20;
     if (g_text_px < 14) g_text_px = 14;
     if (g_ttf_ok) g_ttf_scale = stbtt_ScaleForPixelHeight(&g_ttf, (float)g_text_px);
+    scale_logo(g_logo_px_req > 0 ? g_logo_px_req : ref / 4);
     if (x_img) { x_img->data = NULL; XDestroyImage(x_img); }   // don't free shadow (aliased)
     int scr = DefaultScreen(x_dpy);
     x_img = XCreateImage(x_dpy, DefaultVisual(x_dpy, scr), DefaultDepth(x_dpy, scr),
@@ -498,8 +526,8 @@ int main(int argc, char **argv) {
     int req_w = atoi(arg(argc, argv, "--width", "0"));
     int req_h = atoi(arg(argc, argv, "--height", "0"));
 
-    signal(SIGINT, on_signal);
-    signal(SIGTERM, on_signal);
+    install_signal(SIGINT);
+    install_signal(SIGTERM);
 
     // auto: x11 when an X display is present, else fbdev.
     int use_x11 = !strcmp(backend, "x11");
@@ -539,8 +567,9 @@ int main(int argc, char **argv) {
     g_appid = (uint32_t)strtoul(arg(argc, argv, "--appid", "0x41524d41"), NULL, 0);
     load_font(arg(argc, argv, "--font", "/usr/share/armada/splash/font.ttf"), g_text_px);
     load_image(image);
-    int logo_px = atoi(arg(argc, argv, "--logo-height", "0"));
-    scale_logo(logo_px > 0 ? logo_px : text_ref / 4);
+    img_src = img; img_src_w = img_w; img_src_h = img_h;
+    g_logo_px_req = atoi(arg(argc, argv, "--logo-height", "0"));
+    scale_logo(g_logo_px_req > 0 ? g_logo_px_req : text_ref / 4);
 
     read_status(status, g_cur, sizeof g_cur);
     compose(g_cur);
