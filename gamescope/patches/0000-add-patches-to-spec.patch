@@ -11,20 +11,19 @@ diff --git a/anda/games/terra-gamescope/terra-gamescope.spec b/anda/games/terra-
 index d0aeab1dca..abb24dd6c5 100755
 --- a/anda/games/terra-gamescope/terra-gamescope.spec
 +++ b/anda/games/terra-gamescope/terra-gamescope.spec
-@@ -23,6 +23,17 @@ Patch0:         Use-system-stb-glm.patch
+@@ -23,6 +23,16 @@ Patch0:         Use-system-stb-glm.patch
  
  Patch1:         0001-cstdint.patch
  
 +Patch2:          0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch
-+Patch3:          0005-feature-add-rotation-shader-for-rotating-output.patch
-+Patch4:          0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch
-+Patch5:          0007-steamcompmgr-fallback-appid-focus.patch
-+Patch6:          0008-drm-synthesize-edid-for-edidless-internal-panels.patch
-+Patch7:          0009-drm-support-known-display-profiles-for-edidless-panels.patch
-+Patch8:          0010-drm-compose-gamma22-hdr-without-hardware-color-management.patch
-+Patch9:          0011-wsi-filter-hdr-formats-by-underlying-support.patch
-+Patch10:          0012-color-scale-sdr-white-on-gamma22-hdr-output.patch
-+Patch11:          0013-expose-client-sampleable-formats.patch
++Patch3:          0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch
++Patch4:          0007-steamcompmgr-fallback-appid-focus.patch
++Patch5:          0008-drm-synthesize-edid-for-edidless-internal-panels.patch
++Patch6:          0009-drm-support-known-display-profiles-for-edidless-panels.patch
++Patch7:          0010-drm-compose-gamma22-hdr-without-hardware-color-management.patch
++Patch8:          0011-wsi-filter-hdr-formats-by-underlying-support.patch
++Patch9:          0012-color-scale-sdr-white-on-gamma22-hdr-output.patch
++Patch10:          0013-expose-client-sampleable-formats.patch
 +
  BuildRequires:  cmake
  BuildRequires:  gcc
