@@ -1,7 +1,8 @@
 // Boot splash: centers an image with status text below it, from a status file.
 // fbdev backend for early boot (never touches the GPU); x11 backend for the
 // gamescope phase (gamescope shows it via the fallback-appid patch, yields to
-// Steam). Auto-selects x11 when an X display is present, else fbdev.
+// Steam); drm backend renders the primary connector only (panel-native mode,
+// other CRTCs off) and falls back to fbdev. Auto: x11 if DISPLAY, else fbdev.
 //
 // Image = "ASP1" container: "ASP1" | u32 width LE | u32 height LE | W*H*4 BGRA.
 // Status file: one line per row centered below the image; leading '!' = red.
@@ -19,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
@@ -64,13 +66,34 @@ static void draw_glyph(int ch, int px, int py, int s, uint32_t color) {
                         put_shadow(px + col * s + dx, py + row * s + dy, color);
 }
 
-static int text_px_width(const char *s) { return (int)strlen(s) * 8 * text_scale; }
+// Steam localizes its updater lines: status text is UTF-8, not ASCII, and
+// byte-wise rendering draws it as Latin-1 mojibake. Invalid bytes -> U+FFFD.
+static int utf8_cps(const char *s, uint32_t *out, int max) {
+    const unsigned char *p = (const unsigned char *)s;
+    int n = 0;
+    while (*p && n < max) {
+        uint32_t cp = 0xFFFD;
+        if (*p < 0x80) { cp = *p; p += 1; }
+        else if ((*p & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
+            cp = (uint32_t)(*p & 0x1F) << 6 | (p[1] & 0x3F); p += 2;
+        } else if ((*p & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80) {
+            cp = (uint32_t)(*p & 0x0F) << 12 | (uint32_t)(p[1] & 0x3F) << 6 | (p[2] & 0x3F); p += 3;
+        } else if ((*p & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80 && (p[3] & 0xC0) == 0x80) {
+            cp = (uint32_t)(*p & 0x07) << 18 | (uint32_t)(p[1] & 0x3F) << 12 |
+                 (uint32_t)(p[2] & 0x3F) << 6 | (p[3] & 0x3F); p += 4;
+        } else p += 1;
+        out[n++] = cp;
+    }
+    return n;
+}
 
 static void draw_text_centered(const char *s, int y, int scale, uint32_t color) {
-    int x = (SW - text_px_width(s)) / 2;
+    uint32_t cps[512];
+    int n = utf8_cps(s, cps, 512);
+    int x = (SW - n * 8 * scale) / 2;
     if (x < 0) x = 0;
-    for (const char *p = s; *p && *p != '\n'; p++) {
-        draw_glyph((unsigned char)*p, x, y, scale, color);
+    for (int i = 0; i < n; i++) {
+        draw_glyph((int)cps[i], x, y, scale, color);
         x += 8 * scale;
     }
 }
@@ -119,20 +142,20 @@ static int load_font(const char *path, int px) {
     return (g_ttf_ok = 1);
 }
 
-static int tt_text_w(const char *s) {
+static int tt_text_w(const uint32_t *cp, int n) {
     float w = 0;
-    for (const char *p = s; *p; p++) {
+    for (int i = 0; i < n; i++) {
         int adv, lsb;
-        stbtt_GetCodepointHMetrics(&g_ttf, (unsigned char)*p, &adv, &lsb);
+        stbtt_GetCodepointHMetrics(&g_ttf, (int)cp[i], &adv, &lsb);
         w += adv * g_ttf_scale;
-        if (p[1]) w += stbtt_GetCodepointKernAdvance(&g_ttf, (unsigned char)*p, (unsigned char)p[1]) * g_ttf_scale;
+        if (i + 1 < n) w += stbtt_GetCodepointKernAdvance(&g_ttf, (int)cp[i], (int)cp[i + 1]) * g_ttf_scale;
     }
     return (int)(w + 0.5f);
 }
 
-static void tt_blit(const char *s, float x, int baseline, uint32_t color, int num, int den) {
-    for (const char *p = s; *p; p++) {
-        int c = (unsigned char)*p, ix0, iy0, ix1, iy1;
+static void tt_blit(const uint32_t *cp, int n, float x, int baseline, uint32_t color, int num, int den) {
+    for (int k = 0; k < n; k++) {
+        int c = (int)cp[k], ix0, iy0, ix1, iy1;
         stbtt_GetCodepointBitmapBox(&g_ttf, c, g_ttf_scale, g_ttf_scale, &ix0, &iy0, &ix1, &iy1);
         int gw = ix1 - ix0, gh = iy1 - iy0;
         if (gw > 0 && gh > 0) {
@@ -149,15 +172,17 @@ static void tt_blit(const char *s, float x, int baseline, uint32_t color, int nu
         int adv, lsb;
         stbtt_GetCodepointHMetrics(&g_ttf, c, &adv, &lsb);
         x += adv * g_ttf_scale;
-        if (p[1]) x += stbtt_GetCodepointKernAdvance(&g_ttf, c, (unsigned char)p[1]) * g_ttf_scale;
+        if (k + 1 < n) x += stbtt_GetCodepointKernAdvance(&g_ttf, c, (int)cp[k + 1]) * g_ttf_scale;
     }
 }
 
 static void tt_draw_centered(const char *s, int baseline, uint32_t color) {
-    int x = (SW - tt_text_w(s)) / 2; if (x < 0) x = 0;
+    uint32_t cps[512];
+    int n = utf8_cps(s, cps, 512);
+    int x = (SW - tt_text_w(cps, n)) / 2; if (x < 0) x = 0;
     int sh = g_text_px / 20; if (sh < 1) sh = 1;
-    tt_blit(s, x + sh, baseline + sh, 0xFF000000, 150, 255);   // soft drop shadow
-    tt_blit(s, x, baseline, color, 255, 255);                  // text
+    tt_blit(cps, n, x + sh, baseline + sh, 0xFF000000, 150, 255);   // soft drop shadow
+    tt_blit(cps, n, x, baseline, color, 255, 255);                  // text
 }
 
 static void compose(const char *status) {
@@ -400,6 +425,142 @@ static void fb_present(void) {
     free(row);
 }
 
+// ================= drm backend =================
+// Per-connector KMS: a dumb buffer sized to the primary panel's own mode,
+// other CRTCs off -- no fbdev clone, no first-bind geometry race.
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+
+struct drmb {
+    int fd, angle, crtc_on, dirty_ok, setcrtc_logged;
+    uint32_t crtc_id, conn_id, fb_id;
+    uint32_t pitch, w, h;
+    uint8_t *map;
+    size_t map_sz;
+    drmModeModeInfo mode;
+    drmModeRes *res;
+};
+static struct drmb db;
+
+static const char *conn_type_name(uint32_t t) {
+    switch (t) {
+        case DRM_MODE_CONNECTOR_DSI: return "DSI";
+        case DRM_MODE_CONNECTOR_eDP: return "eDP";
+        case DRM_MODE_CONNECTOR_DisplayPort: return "DP";
+        case DRM_MODE_CONNECTOR_HDMIA: return "HDMI-A";
+        default: return "OUT";
+    }
+}
+
+static int drm_open(const char *want, int angle) {
+    char dev[32];
+    db.fd = -1;
+    drmModeRes *res = NULL;
+    for (int card = 0; card < 3; card++) {
+        snprintf(dev, sizeof dev, "/dev/dri/card%d", card);
+        db.fd = open(dev, O_RDWR | O_CLOEXEC);
+        if (db.fd < 0) continue;
+        if ((res = drmModeGetResources(db.fd))) break;
+        close(db.fd); db.fd = -1;
+    }
+    if (!res) { fprintf(stderr, "armada-splash: no KMS device\n"); return 0; }
+
+    drmModeConnector *conn = NULL;
+    for (int i = 0; i < res->count_connectors; i++) {
+        drmModeConnector *c = drmModeGetConnector(db.fd, res->connectors[i]);
+        if (!c) continue;
+        char name[32];
+        snprintf(name, sizeof name, "%s-%u", conn_type_name(c->connector_type), c->connector_type_id);
+        if (c->connection == DRM_MODE_CONNECTED && c->count_modes > 0 &&
+            (!want || !*want || !strcmp(name, want))) { conn = c; break; }
+        drmModeFreeConnector(c);
+    }
+    if (!conn) { fprintf(stderr, "armada-splash: connector %s not found\n", want ? want : "(any)"); return 0; }
+    db.conn_id = conn->connector_id;
+    db.mode = conn->modes[0];
+    for (int i = 0; i < conn->count_modes; i++)
+        if (conn->modes[i].type & DRM_MODE_TYPE_PREFERRED) { db.mode = conn->modes[i]; break; }
+
+    uint32_t possible = 0;
+    if (conn->count_encoders > 0) {
+        drmModeEncoder *e = drmModeGetEncoder(db.fd, conn->encoders[0]);
+        if (e) { possible = e->possible_crtcs; drmModeFreeEncoder(e); }
+    }
+    db.crtc_id = 0;
+    for (int i = 0; i < res->count_crtcs; i++)
+        if (!possible || (possible & (1u << i))) { db.crtc_id = res->crtcs[i]; break; }
+    drmModeFreeConnector(conn);
+    if (!db.crtc_id) { fprintf(stderr, "armada-splash: no CRTC\n"); return 0; }
+
+    db.w = db.mode.hdisplay; db.h = db.mode.vdisplay;
+    struct drm_mode_create_dumb cd = { .width = db.w, .height = db.h, .bpp = 32 };
+    if (drmIoctl(db.fd, DRM_IOCTL_MODE_CREATE_DUMB, &cd)) {
+        fprintf(stderr, "armada-splash: CREATE_DUMB failed\n"); return 0;
+    }
+    db.pitch = cd.pitch; db.map_sz = cd.size;
+    if (drmModeAddFB(db.fd, db.w, db.h, 24, 32, db.pitch, cd.handle, &db.fb_id)) {
+        fprintf(stderr, "armada-splash: AddFB failed\n"); return 0;
+    }
+    struct drm_mode_map_dumb md = { .handle = cd.handle };
+    if (drmIoctl(db.fd, DRM_IOCTL_MODE_MAP_DUMB, &md)) return 0;
+    db.map = mmap(NULL, db.map_sz, PROT_READ | PROT_WRITE, MAP_SHARED, db.fd, md.offset);
+    if (db.map == MAP_FAILED) { db.map = NULL; return 0; }
+    memset(db.map, 0, db.map_sz);
+    // The modeset happens in the first present: command-mode panels push one
+    // frame per commit, and it must not be this still-black buffer.
+    db.res = res;
+    db.dirty_ok = 1;
+
+    db.angle = angle;
+    if (angle == 90 || angle == 270) { SW = db.h; SH = db.w; }
+    else { SW = db.w; SH = db.h; }
+    return 1;
+}
+
+static void drm_present(void) {
+    if (!db.map) return;
+    for (uint32_t py = 0; py < db.h; py++) {
+        uint32_t *row = (uint32_t *)(db.map + (size_t)py * db.pitch);
+        for (uint32_t px = 0; px < db.w; px++) {
+            int lx, ly;
+            switch (db.angle) {
+                case 90:  ly = (int)db.w - 1 - (int)px; lx = (int)py; break;
+                case 180: lx = (int)db.w - 1 - (int)px; ly = (int)db.h - 1 - (int)py; break;
+                case 270: ly = (int)px; lx = (int)db.h - 1 - (int)py; break;
+                default:  lx = (int)px; ly = (int)py; break;
+            }
+            row[px] = (lx >= 0 && lx < SW && ly >= 0 && ly < SH)
+                    ? shadow[ly * SW + lx] : 0xFF000000u;
+        }
+    }
+    // Command-mode panels show one frame per commit; buffer writes alone
+    // never reach glass. The master is HELD while this drawer owns the
+    // screen: masterless, kernel fbdev steals the scanout on any fb0 write.
+    if (!db.crtc_on) {
+        drmSetMaster(db.fd);   // explicit: a predecessor may just have yielded
+        if (drmModeSetCrtc(db.fd, db.crtc_id, db.fb_id, 0, 0, &db.conn_id, 1, &db.mode)) {
+            if (!db.setcrtc_logged) {
+                db.setcrtc_logged = 1;
+                fprintf(stderr, "armada-splash: SetCrtc: %s (retrying)\n", strerror(errno));
+            }
+            return;            // predecessor still holds; retried next tick
+        }
+        fprintf(stderr, "armada-splash: drm modeset ok %ux%u conn=%u crtc=%u pid=%d\n",
+                db.w, db.h, db.conn_id, db.crtc_id, (int)getpid());
+        for (int i = 0; i < db.res->count_crtcs; i++)
+            if (db.res->crtcs[i] != db.crtc_id)
+                drmModeSetCrtc(db.fd, db.res->crtcs[i], 0, 0, 0, NULL, 0, NULL);
+        db.crtc_on = 1;
+        return;
+    }
+    if (db.dirty_ok && drmModeDirtyFB(db.fd, db.fb_id, NULL, 0) != 0) {
+        db.dirty_ok = 0;
+        fprintf(stderr, "armada-splash: DirtyFB unsupported; re-modesetting per update\n");
+    }
+    if (!db.dirty_ok)
+        drmModeSetCrtc(db.fd, db.crtc_id, db.fb_id, 0, 0, &db.conn_id, 1, &db.mode);
+}
+
 // ================= x11 backend (Xwayland under gamescope) =================
 // gamescope's steam mode shows only X11 windows via its appid focus machinery.
 // STEAM_GAME = g_appid opts this window into the fallback-appid patch; set
@@ -538,6 +699,7 @@ int main(int argc, char **argv) {
 #endif
 
     int use_ppm = !strcmp(backend, "ppm");
+    int use_drm = !strcmp(backend, "drm");
 #ifdef HAVE_X11
     if (use_x11) {
         x_dpy = XOpenDisplay(NULL);
@@ -550,6 +712,13 @@ int main(int argc, char **argv) {
     if (use_ppm) {
         SW = req_w > 0 ? req_w : 1080;
         SH = req_h > 0 ? req_h : 1920;
+    } else if (use_drm) {
+        if (!drm_open(arg(argc, argv, "--connector", NULL), angle)) {
+            fprintf(stderr, "armada-splash: drm unavailable; using fbdev\n");
+            if (db.fd >= 0) { close(db.fd); db.fd = -1; }
+            use_drm = 0;
+            if (!fb_open(fbdev, angle)) return 1;
+        }
     } else {
         if (!fb_open(fbdev, angle)) return 1;
     }
@@ -606,17 +775,37 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    fb_present();
+    void (*present)(void) = use_drm ? drm_present : fb_present;
+    present();
     int tfd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC);
     struct itimerspec its = { {0, 250000000}, {0, 250000000} };
     timerfd_settime(tfd, 0, &its, NULL);
+    // Deactivate handshake: a successor (next drawer, or sddm for the
+    // session) writes the takeover file; the incumbent yields and exits.
+    const char *tkpath = "/run/armada/takeover";
+    char mytk[32], tk[32];
+    snprintf(mytk, sizeof mytk, "%d\n", (int)getpid());
+    if (use_drm) {
+        FILE *tf = fopen(tkpath, "w");
+        if (tf) { fputs(mytk, tf); fclose(tf); }
+    }
     while (running) {
         struct pollfd pfd = { tfd, POLLIN, 0 };
         if (poll(&pfd, 1, -1) < 0 && errno == EINTR) continue;
         uint64_t x; ssize_t rr = read(tfd, &x, sizeof x); (void)rr;
+        if (use_drm) {
+            if (!db.crtc_on) { present(); }   // keep retrying the first modeset
+            read_status(tkpath, tk, sizeof tk);
+            if (tk[0] && strcmp(tk, mytk)) {
+                fprintf(stderr, "armada-splash: yielding display\n");
+                drmDropMaster(db.fd);
+                for (int i = 0; i < 32 && running; i++) usleep(250000);
+                break;
+            }
+        }
         read_status(status, g_cur, sizeof g_cur);
-        if (strcmp(g_cur, g_shown)) { compose(g_cur); strcpy(g_shown, g_cur); fb_present(); }
+        if (strcmp(g_cur, g_shown)) { compose(g_cur); strcpy(g_shown, g_cur); present(); }
     }
-    fb_restore();
+    if (!use_drm) fb_restore();
     return 0;
 }
