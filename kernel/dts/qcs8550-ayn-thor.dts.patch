@@ -2,6 +2,15 @@ From: virtudude <virtudude@protonmail.com>
 
 --- a/arch/arm64/boot/dts/qcom/qcs8550-ayn-thor.dts
 +++ b/arch/arm64/boot/dts/qcom/qcs8550-ayn-thor.dts
+@@ -16,7 +16,7 @@
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 
+-		pinctrl-0 = <&volume_up_n &key_ayn_n>;
++		pinctrl-0 = <&volume_up_n &key_ayn_n &hall_lid_n>;
+ 
+ 		key-ayn {
+ 			label = "AYN Key";
 @@ -270,8 +270,6 @@
  
  		touchscreen-size-x = <1080>;
@@ -19,4 +28,20 @@ From: virtudude <virtudude@protonmail.com>
 -		touchscreen-inverted-x;
  
  		label = "bottom_touchscreen";
+ 
+@@ -446,6 +442,15 @@
+ 		function = "gpio";
+ 		bias-pull-up;
+ 		output-disable;
++	};
++
++	/* Open-drain hall output: with no pull-up the released (lid open)
++	   level is undefined. */
++	hall_lid_n: hall-lid-n-state {
++		pins = "gpio17";
++		function = "gpio";
++		bias-pull-up;
++		output-disable;
+ 	};
+ };
  
