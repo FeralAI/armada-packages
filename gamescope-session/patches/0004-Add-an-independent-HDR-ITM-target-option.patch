@@ -1,3 +1,4 @@
+From 61aec7b3e03acae1c6b0df7057b57a10370887c7 Mon Sep 17 00:00:00 2001
 From: virtudude <virtudude@protonmail.com>
 Date: Thu, 30 Jul 2026 12:03:00 -0400
 Subject: [PATCH 4/4] Add an independent HDR ITM target option
@@ -10,7 +11,7 @@ Steam can then own the active HDR state through Gamescope runtime properties.
  1 file changed, 4 insertions(+)
 
 diff --git a/usr/share/gamescope-session-plus/gamescope-session-plus b/usr/share/gamescope-session-plus/gamescope-session-plus
-index b2736d2..34555af 100755
+index cc05043..11a8f9d 100755
 --- a/usr/share/gamescope-session-plus/gamescope-session-plus
 +++ b/usr/share/gamescope-session-plus/gamescope-session-plus
 @@ -237,6 +237,10 @@ if [ -z "$GAMESCOPECMD" ]; then
@@ -25,4 +26,5 @@ index b2736d2..34555af 100755
  		$CURSOR \
  		$RESOLUTION \
 -- 
-2.50.1
+2.55.0
+

@@ -10,34 +10,40 @@ source ../toolchain.env
 
 rm -rf out
 mkdir -p out
-
 podman run --rm \
   --volume "${PACKAGE_DIR}:/work:Z" \
   --workdir /work \
   --platform linux/aarch64 \
   --env COMMIT="${COMMIT}" \
-  --env VERSION="${VERSION}" \
+  --env ARMADA_MARCH="${ARMADA_MARCH}" \
   "${BUILDER_IMAGE}" \
   bash -euxo pipefail -c '
-    export HOME=/tmp
-    dnf -y install rpm-build rpmdevtools spectool "dnf-command(builddep)"
-    rpmdev-setuptree
+    source /etc/os-release
+    dnf install -y --nogpgcheck --repofrompath "terra,https://repos.fyralabs.com/terra${VERSION_ID}" terra-release
+    dnf -y install --skip-unavailable \
+        anda
     cat >/etc/rpm/macros.armada <<EOF
 %_buildhost armada-builder
 %packager Armada
 %vendor Armada
 EOF
+    cd /tmp
+    git clone https://github.com/terrapkg/packages.git
+    cd packages
+    git checkout ${COMMIT}
 
-    cp /work/gamescope-session.spec "$HOME/rpmbuild/SPECS/"
-    sed -i "s/^%global commit .*/%global commit ${COMMIT}/" "$HOME/rpmbuild/SPECS/gamescope-session.spec"
-    sed -i "s/^Version:.*/Version:        ${VERSION}/" "$HOME/rpmbuild/SPECS/gamescope-session.spec"
-    cp /work/patches/*.patch "$HOME/rpmbuild/SOURCES/"
+    git apply /work/patches/0000-add-patches-to-spec.patch
 
-    spectool -g -R "$HOME/rpmbuild/SPECS/gamescope-session.spec"
-    dnf -y builddep "$HOME/rpmbuild/SPECS/gamescope-session.spec"
-    rpmbuild -bb "$HOME/rpmbuild/SPECS/gamescope-session.spec"
+    PKG=anda/games/gamescope-session
 
-    cp "$HOME"/rpmbuild/RPMS/noarch/gamescope-session-*.rpm /work/out/
+    sed -i "/^Release:/s/%?dist/%{?dist}.armada/" ${PKG}/gamescope-session.spec
+    sed -i "/^%build$/i %global build_cflags %{build_cflags} ${ARMADA_MARCH}" ${PKG}/gamescope-session.spec
+    sed -i "/^%build$/i %global build_cxxflags %{build_cxxflags} ${ARMADA_MARCH}" ${PKG}/gamescope-session.spec
+    cp /work/patches/*.patch ${PKG}/
+
+    dnf builddep -y ${PKG}/gamescope-session.spec
+    anda build --rpm-builder=rpmbuild ${PKG}/pkg
+    cp /tmp/packages/anda-build/rpm/rpms/*.rpm /work/out/
 '
 
 echo "built: ${PACKAGE_DIR}/out"

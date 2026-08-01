@@ -1,0 +1,62 @@
+From 22b23d8083cb8c1f009cfbecf30e9e9d56e96715 Mon Sep 17 00:00:00 2001
+From: Radical <radical@radical.fun>
+Date: Sat, 1 Aug 2026 17:06:07 +0200
+Subject: [PATCH 2/4] replace --use-shader-rotation with
+ --force-composition-rotation
+
+---
+ usr/share/gamescope-session-plus/device-quirks          | 4 ++--
+ usr/share/gamescope-session-plus/gamescope-session-plus | 8 ++++----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/usr/share/gamescope-session-plus/device-quirks b/usr/share/gamescope-session-plus/device-quirks
+index 75e216a..b791f11 100644
+--- a/usr/share/gamescope-session-plus/device-quirks
++++ b/usr/share/gamescope-session-plus/device-quirks
+@@ -30,7 +30,7 @@ fi
+ OXP_X1_LIST="ONEXPLAYER X1 i"
+ if [[ ":$OXP_X1_LIST:" =~ ":$SYS_ID:"  ]]; then
+   PANEL_TYPE=internal
+-  USE_ROTATION_SHADER=1
++  FORCE_COMPOSITION_ROTATION=1
+   ORIENTATION=left
+   CUSTOM_REFRESH_RATES=60,120
+ 
+@@ -63,7 +63,7 @@ fi
+ if [[ ":$SYS_ID:" =~ :ONEXPLAYER\ G1\ (A|i): ]]; then
+   PANEL_TYPE=internal
+   # AMD version has hardware rotation
+-  [[ ":$SYS_ID:" =~ ":ONEXPLAYER G1 i:" ]] && USE_ROTATION_SHADER=1
++  [[ ":$SYS_ID:" =~ ":ONEXPLAYER G1 i:" ]] && FORCE_COMPOSITION_ROTATION=1
+   ORIENTATION=left
+   CUSTOM_REFRESH_RATES=60,144
+ 
+diff --git a/usr/share/gamescope-session-plus/gamescope-session-plus b/usr/share/gamescope-session-plus/gamescope-session-plus
+index 72e867c..d2ec3e9 100755
+--- a/usr/share/gamescope-session-plus/gamescope-session-plus
++++ b/usr/share/gamescope-session-plus/gamescope-session-plus
+@@ -209,9 +209,9 @@ if [ -z "$GAMESCOPECMD" ]; then
+ 		CUSTOM_REFRESH_RATES_OPTION="--custom-refresh-rates $CUSTOM_REFRESH_RATES"
+ 	fi
+ 
+-	USE_ROTATION_SHADER_OPTION=""
+-	if [ -n "$USE_ROTATION_SHADER" ] && gamescope_has_option "--use-rotation-shader"; then
+-		USE_ROTATION_SHADER_OPTION="--use-rotation-shader $USE_ROTATION_SHADER"
++	FORCE_COMPOSITION_ROTATION_OPTION=""
++	if [ "$FORCE_COMPOSITION_ROTATION" = "1" ] && gamescope_has_option "--force-composition-rotation"; then
++		FORCE_COMPOSITION_ROTATION="--force-composition-rotation"
+ 	fi
+ 
+ 	BACKEND_OPTION=""
+@@ -246,7 +246,7 @@ if [ -z "$GAMESCOPECMD" ]; then
+ 		$ADAPTIVE_SYNC_OPTION \
+ 		$PANEL_TYPE_OPTION \
+ 		$CUSTOM_REFRESH_RATES_OPTION \
+-		$USE_ROTATION_SHADER_OPTION \
++		$FORCE_COMPOSITION_ROTATION_OPTION \
+ 		$BACKEND_OPTION \
+ 		$HDR_OPTIONS \
+ 		$MAX_SCALE_OPTION \
+-- 
+2.55.0
+
