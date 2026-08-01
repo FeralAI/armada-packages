@@ -327,22 +327,36 @@ static void read_status(const char *path, char *out, size_t n) {
 // ================= fbdev backend =================
 
 struct fbdev {
-    int fd, ttyfd, prev_kd;
+    int fd;
     int fbw, fbh, bpp, stride, angle;
     int roff, rlen, goff, glen, boff, blen;
 };
 static struct fbdev fbd;
 static int keep_vt = 0;   // hand off KD_GRAPHICS to the next instance instead of restoring
+static int g_ttyfd = -1, g_prev_kd;
 
-static void fb_restore(void) {
-    if (fbd.ttyfd < 0) return;
+static void vt_restore(void) {
+    if (g_ttyfd < 0) return;
     // On handoff, leave KD_GRAPHICS so fbcon does not repaint before the next owner.
-    if (!keep_vt) ioctl(fbd.ttyfd, KDSETMODE, fbd.prev_kd);
-    close(fbd.ttyfd); fbd.ttyfd = -1;
+    if (!keep_vt) ioctl(g_ttyfd, KDSETMODE, g_prev_kd);
+    close(g_ttyfd); g_ttyfd = -1;
+}
+
+// KD_GRAPHICS suppresses fbcon: in KD_TEXT a console write (kernel error
+// printk passes loglevel=3) hands the scanout to kernel fbdev whenever no
+// DRM master holds it. Arm the restore only if both ioctls succeed.
+static void vt_graphics(void) {
+    g_ttyfd = open("/dev/tty0", O_RDWR);
+    if (g_ttyfd < 0) return;
+    if (ioctl(g_ttyfd, KDGETMODE, &g_prev_kd) == 0 &&
+        ioctl(g_ttyfd, KDSETMODE, KD_GRAPHICS) == 0) {
+        atexit(vt_restore);
+    } else {
+        close(g_ttyfd); g_ttyfd = -1;
+    }
 }
 
 static int fb_open(const char *dev, int angle) {
-    fbd.ttyfd = -1;
     fbd.fd = open(dev, O_RDWR);
     if (fbd.fd < 0) { fprintf(stderr, "armada-splash: open %s: %s\n", dev, strerror(errno)); return 0; }
     struct fb_var_screeninfo v; struct fb_fix_screeninfo f;
@@ -357,9 +371,6 @@ static int fb_open(const char *dev, int angle) {
     fbd.angle = angle;
     if (fbd.rlen == 0) { fbd.roff = 16; fbd.rlen = 8; fbd.goff = 8; fbd.glen = 8; fbd.boff = 0; fbd.blen = 8; }
 
-    if (angle != 0 && angle != 90 && angle != 180 && angle != 270) {
-        fprintf(stderr, "armada-splash: invalid --rotate %d\n", angle); return 0;
-    }
     if (fbd.bpp < 16 || fbd.bpp > 32 || fbd.bpp % 8 != 0) {
         fprintf(stderr, "armada-splash: unsupported bpp %d (need byte-aligned 16..32)\n", fbd.bpp);
         return 0;
@@ -373,16 +384,7 @@ static int fb_open(const char *dev, int angle) {
     // writes land in memory that is not scanned out.
     ioctl(fbd.fd, FBIOBLANK, FB_BLANK_UNBLANK);
 
-    // Arm the KD_TEXT restore only if both ioctls succeed, else prev_kd is bogus.
-    fbd.ttyfd = open("/dev/tty0", O_RDWR);
-    if (fbd.ttyfd >= 0) {
-        if (ioctl(fbd.ttyfd, KDGETMODE, &fbd.prev_kd) == 0 &&
-            ioctl(fbd.ttyfd, KDSETMODE, KD_GRAPHICS) == 0) {
-            atexit(fb_restore);
-        } else {
-            close(fbd.ttyfd); fbd.ttyfd = -1;
-        }
-    }
+    vt_graphics();
 
     if (angle == 90 || angle == 270) { SW = fbd.fbh; SH = fbd.fbw; }
     else { SW = fbd.fbw; SH = fbd.fbh; }
@@ -681,6 +683,9 @@ int main(int argc, char **argv) {
     const char *backend = arg(argc, argv, "--backend", "auto");
     const char *fbdev = arg(argc, argv, "--fbdev", "/dev/fb0");
     int angle = atoi(arg(argc, argv, "--rotate", "0"));
+    if (angle != 0 && angle != 90 && angle != 180 && angle != 270) {
+        fprintf(stderr, "armada-splash: invalid --rotate %d\n", angle); return 1;
+    }
     for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "--keep-vt")) keep_vt = 1;
     const char *bgs = arg(argc, argv, "--bg", NULL);
     if (bgs) bg = 0xFF000000 | (strtoul(bgs, NULL, 0) & 0xFFFFFF);
@@ -713,7 +718,9 @@ int main(int argc, char **argv) {
         SW = req_w > 0 ? req_w : 1080;
         SH = req_h > 0 ? req_h : 1920;
     } else if (use_drm) {
-        if (!drm_open(arg(argc, argv, "--connector", NULL), angle)) {
+        if (drm_open(arg(argc, argv, "--connector", NULL), angle)) {
+            vt_graphics();
+        } else {
             fprintf(stderr, "armada-splash: drm unavailable; using fbdev\n");
             if (db.fd >= 0) { close(db.fd); db.fd = -1; }
             use_drm = 0;
@@ -782,6 +789,7 @@ int main(int argc, char **argv) {
     timerfd_settime(tfd, 0, &its, NULL);
     // Deactivate handshake: a successor (next drawer, or sddm for the
     // session) writes the takeover file; the incumbent yields and exits.
+    int yielded = 0;
     const char *tkpath = "/run/armada/takeover";
     char mytk[32], tk[32];
     snprintf(mytk, sizeof mytk, "%d\n", (int)getpid());
@@ -798,14 +806,33 @@ int main(int argc, char **argv) {
             read_status(tkpath, tk, sizeof tk);
             if (tk[0] && strcmp(tk, mytk)) {
                 fprintf(stderr, "armada-splash: yielding display\n");
-                drmDropMaster(db.fd);
-                for (int i = 0; i < 32 && running; i++) usleep(250000);
+                yielded = 1;
                 break;
             }
         }
         read_status(status, g_cur, sizeof g_cur);
         if (strcmp(g_cur, g_shown)) { compose(g_cur); strcpy(g_shown, g_cur); present(); }
     }
-    if (!use_drm) fb_restore();
+    // TERM can land between takeover polls; the successor's announce precedes
+    // the stop, so a final read decides. No announce (shutdown) = no linger.
+    if (use_drm && !yielded) {
+        read_status(tkpath, tk, sizeof tk);
+        yielded = tk[0] && strcmp(tk, mytk);
+    }
+    // Yield the master, then hold the fd until the scanout provably moves
+    // off this drawer's framebuffer: closing earlier destroys the fb mid-scan
+    // (black), and GetCrtc needs no master. Bounded as a crash backstop.
+    if (use_drm && db.crtc_on && yielded) {
+        drmDropMaster(db.fd);
+        for (int i = 0; i < 240; i++) {
+            drmModeCrtc *c = drmModeGetCrtc(db.fd, db.crtc_id);
+            // A failed query says nothing about the scanout; only a readable
+            // CRTC naming another framebuffer proves the handoff happened.
+            int moved = c && c->buffer_id != db.fb_id;
+            if (c) drmModeFreeCrtc(c);
+            if (moved) break;
+            usleep(250000);
+        }
+    }
     return 0;
 }
