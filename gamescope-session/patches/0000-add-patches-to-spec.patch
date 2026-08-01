@@ -11,14 +11,13 @@ diff --git a/anda/games/gamescope-session/gamescope-session.spec b/anda/games/ga
 index ad86d77583..de2b2b7635 100644
 --- a/anda/games/gamescope-session/gamescope-session.spec
 +++ b/anda/games/gamescope-session/gamescope-session.spec
-@@ -17,11 +17,16 @@ BuildRequires:  systemd-rpm-macros
+@@ -17,11 +17,15 @@ BuildRequires:  systemd-rpm-macros
  Packager:       Tulip Blossom <tulilirockz@outlook.com>
  BuildArch:      noarch
  
 +Patch1:         0001-Disable-session-launcher-xtrace.patch
-+Patch2:         0002-replace-use-shader-rotation-with-force-composition-r.patch
-+Patch3:         0003-Extend-the-startup-socket-timeout.patch
-+Patch4:         0004-Add-an-independent-HDR-ITM-target-option.patch
++Patch2:         0002-Extend-the-startup-socket-timeout.patch
++Patch3:         0003-Add-an-independent-HDR-ITM-target-option.patch
 +
  %description
  Gamescope session plus based on Valve's gamescope.
