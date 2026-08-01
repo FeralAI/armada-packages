@@ -4,29 +4,23 @@ Patches applied on top of BASE.env. Each entry's `source` is an upstream URL pin
 to a commit, or `armada` if it's original; a URL source with no `notes` is verbatim.
 `notes` mean the file was modified.
 
-- `patches/0001-cstdint.patch`
-  source: https://src.fedoraproject.org/rpms/gamescope/blob/cc1a9bd6aad3992a1bdaff27219efc1744478d8c/f/0001-cstdint.patch
-- `patches/Allow-to-use-system-wlroots.patch`
-  source: https://src.fedoraproject.org/rpms/gamescope/blob/5566fcac324cb909fd49a2323816deefc445a5fa/f/Allow-to-use-system-wlroots.patch
-- `patches/Use-system-stb-glm.patch`
-  source: https://src.fedoraproject.org/rpms/gamescope/blob/b5a75d544d1f314ef0d86c4dc9142b1de62e1b8e/f/Use-system-stb-glm.patch
-- `patches/0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch`
+- `patches/0000-add-patches-to-spec.patch`
+  source: armada
+- `patches/0001-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch`
   source: https://github.com/ROCKNIX/distribution/blob/ff40ff1897fa5687bc0e50103e50acc9cd90d7d3/projects/ROCKNIX/packages/apps/gamescope/patches/0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch
-- `patches/0005-feature-add-rotation-shader-for-rotating-output.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/d5991e155a1941c248c8bcb9b364723eec75fc61/projects/ROCKNIX/packages/apps/gamescope/patches/0005-feature-add-rotation-shader-for-rotating-output.patch
-- `patches/0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch`
+- `patches/0002-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch`
   source: https://github.com/ROCKNIX/distribution/blob/e108ad2b8971b4e332d7457b75dd21dadb666d19/projects/ROCKNIX/packages/apps/gamescope/patches/0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch
-- `patches/0007-steamcompmgr-fallback-appid-focus.patch`
+- `patches/0003-steamcompmgr-fallback-appid-focus.patch`
   source: armada
-- `patches/0008-drm-synthesize-edid-for-edidless-internal-panels.patch`
+- `patches/0004-drm-synthesize-edid-for-edidless-internal-panels.patch`
   source: armada
-- `patches/0009-drm-support-known-display-profiles-for-edidless-panels.patch`
+- `patches/0005-drm-support-known-display-profiles-for-edidless-panels.patch`
   source: armada
-- `patches/0010-drm-compose-gamma22-hdr-without-hardware-color-management.patch`
+- `patches/0006-drm-compose-gamma22-hdr-without-hardware-color-management.patch`
   source: armada
-- `patches/0011-wsi-filter-hdr-formats-by-underlying-support.patch`
+- `patches/0007-wsi-filter-hdr-formats-by-underlying-support.patch`
   source: armada
-- `patches/0012-color-scale-sdr-white-on-gamma22-hdr-output.patch`
+- `patches/0008-color-scale-sdr-white-on-gamma22-hdr-output.patch`
   source: armada
-- `patches/0013-expose-client-sampleable-formats.patch`
+- `patches/0009-expose-client-sampleable-formats.patch`
   source: armada
