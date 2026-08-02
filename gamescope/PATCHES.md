@@ -4,8 +4,6 @@ Patches applied on top of BASE.env. Each entry's `source` is an upstream URL pin
 to a commit, or `armada` if it's original; a URL source with no `notes` is verbatim.
 `notes` mean the file was modified.
 
-- `patches/0000-add-patches-to-spec.patch`
-  source: armada
 - `patches/0001-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch`
   source: https://github.com/ROCKNIX/distribution/blob/ff40ff1897fa5687bc0e50103e50acc9cd90d7d3/projects/ROCKNIX/packages/apps/gamescope/patches/0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch
 - `patches/0002-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch`

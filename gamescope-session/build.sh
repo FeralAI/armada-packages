@@ -19,30 +19,66 @@ podman run --rm \
   "${BUILDER_IMAGE}" \
   bash -euxo pipefail -c '
     source /etc/os-release
+
     dnf install -y --nogpgcheck --repofrompath "terra,https://repos.fyralabs.com/terra${VERSION_ID}" terra-release
     dnf -y install --skip-unavailable \
         anda
+
     cat >/etc/rpm/macros.armada <<EOF
 %_buildhost armada-builder
 %packager Armada
 %vendor Armada
 EOF
-    cd /tmp
-    git clone https://github.com/terrapkg/packages.git
-    cd packages
+
+    git clone https://github.com/terrapkg/packages.git /tmp/packages
+
+    cd /tmp/packages
+
     git checkout ${COMMIT}
 
-    git apply /work/patches/0000-add-patches-to-spec.patch
-
     PKG=anda/games/gamescope-session
+    SPEC="${PKG}/gamescope-session.spec"
 
-    sed -i "/^Release:/s/%?dist/%{?dist}.armada/" ${PKG}/gamescope-session.spec
-    sed -i "/^%build$/i %global build_cflags %{build_cflags} ${ARMADA_MARCH}" ${PKG}/gamescope-session.spec
-    sed -i "/^%build$/i %global build_cxxflags %{build_cxxflags} ${ARMADA_MARCH}" ${PKG}/gamescope-session.spec
-    cp /work/patches/*.patch ${PKG}/
+    mapfile -t PATCHES < <(
+      find /work/patches \
+        -maxdepth 1 \
+        -type f \
+        -name "[0-9][0-9][0-9][0-9]-*.patch" \
+        -printf "%f\n" |
+        sort -V
+    )
 
-    dnf builddep -y ${PKG}/gamescope-session.spec
-    anda build --rpm-builder=rpmbuild ${PKG}/pkg
+    INSERT_LINE="$(
+      grep -n -m1 "^BuildRequires:" "${SPEC}" |
+        cut -d: -f1
+    )"
+
+    {
+      head -n "$((INSERT_LINE - 1))" "${SPEC}"
+      printf "Patch:         %s\n" "${PATCHES[@]}"
+      printf "\n"
+      tail -n "+${INSERT_LINE}" "${SPEC}"
+    } >"${SPEC}.tmp"
+
+    mv "${SPEC}.tmp" "${SPEC}"
+
+    for patch in "${PATCHES[@]}"; do
+      install -m0644 "/work/patches/${patch}" "${PKG}/${patch}"
+    done
+
+    sed -i \
+      -e "/^Release:/s/%?dist/%{?dist}.armada/" \
+      -e "/^%build$/i %global build_cflags %{build_cflags} ${ARMADA_MARCH}" \
+      -e "/^%build$/i %global build_cxxflags %{build_cxxflags} ${ARMADA_MARCH}" \
+      -e "s/^%autosetup\>/%autosetup -p1/" \
+      "${SPEC}"
+
+    # Fail in case spec is invalid
+    rpmspec -P "${SPEC}" >/dev/null
+
+    dnf -y builddep "${SPEC}"
+    anda build --rpm-builder=rpmbuild "${PKG}/pkg"
+
     cp /tmp/packages/anda-build/rpm/rpms/*.rpm /work/out/
 '
 
