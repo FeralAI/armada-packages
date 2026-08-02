@@ -84,6 +84,7 @@ v6_20260210_quic_utiwari_crypto_qce_add_runtime_pm_and_interconnect_bandwidth_sc
 0500-ROCKNIX-set-boot-fanspeed.patch
 0501-ROCKNIX-fix-wifi-and-bt-mac.patch
 0503-ROCKNIX-battery-name.patch
+0900-power-supply-qcom-battmgr-log-usb-adapter-type.patch
 
 # ============== SM8650 (AYANEO Pocket S2, KONKR Pocket FIT) ==============
 0006-add-hw_params-callback-function-to-drm_connector_hdmi_audio_ops.patch

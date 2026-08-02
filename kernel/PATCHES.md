@@ -138,6 +138,8 @@ to a commit, or `armada` if it's original; a URL source with no `notes` is verba
   source: https://github.com/ROCKNIX/distribution/blob/e485495a942daba186d4a8543e18a1ad09c9a5d5/projects/ROCKNIX/devices/SM8750/patches/linux/0508-input-rsinput-add-pm-resume-to-reinit-mcu-after-suspend.patch
 - `patches/0600-ROCKNIX-sm8750-tsens-thermal-zones.patch`
   source: https://github.com/ROCKNIX/distribution/blob/e485495a942daba186d4a8543e18a1ad09c9a5d5/projects/ROCKNIX/devices/SM8750/patches/linux/0600-ROCKNIX-sm8750-tsens-thermal-zones.patch
+- `patches/0900-power-supply-qcom-battmgr-log-usb-adapter-type.patch`
+  source: armada
 - `patches/1000-add-qcom-haptics-driver.patch`
   source: https://github.com/ROCKNIX/distribution/blob/e485495a942daba186d4a8543e18a1ad09c9a5d5/projects/ROCKNIX/devices/SM8550/patches/linux/1000-add-qcom-haptics-driver.patch
 - `patches/1002-haptics-driver-support-periodic-sine-and-fixes.patch`
