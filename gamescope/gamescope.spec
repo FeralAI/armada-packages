@@ -7,7 +7,7 @@
 Name:           gamescope
 # overwritten from BASE.env by build.sh
 Version:        0
-Release:        2%{?dist}.armada
+Release:        3%{?dist}.armada
 Summary:        Micro-compositor for video games on Wayland
 # Automatically converted from old format: BSD - review is highly recommended.
 License:        LicenseRef-Callaway-BSD
@@ -39,6 +39,7 @@ Patch:          0010-drm-compose-gamma22-hdr-without-hardware-color-management.p
 Patch:          0011-wsi-filter-hdr-formats-by-underlying-support.patch
 Patch:          0012-color-scale-sdr-white-on-gamma22-hdr-output.patch
 Patch:          0013-expose-client-sampleable-formats.patch
+Patch:          0014-fix-arm64-steam-night-mode.patch
 
 BuildRequires:  cmake
 BuildRequires:  catch-devel
