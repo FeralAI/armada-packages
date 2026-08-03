@@ -1,7 +1,6 @@
-From 5ddee5b0c0c5e706cf4d1f68c6e374704609111f Mon Sep 17 00:00:00 2001
 From: virtudude <virtudude@protonmail.com>
 Date: Thu, 30 Jul 2026 12:02:00 -0400
-Subject: [PATCH 3/4] Extend the startup socket timeout
+Subject: [PATCH 2/3] Extend the startup socket timeout
 
 The first Gamescope launch can take longer than five seconds when Armada boots
 from an SD card. Allow fifteen seconds before treating startup as failed.
@@ -24,4 +23,3 @@ index d2ec3e9..cc05043 100755
  	# We're done!
 -- 
 2.55.0
-

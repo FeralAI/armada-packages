@@ -1,7 +1,6 @@
-From 61aec7b3e03acae1c6b0df7057b57a10370887c7 Mon Sep 17 00:00:00 2001
 From: virtudude <virtudude@protonmail.com>
 Date: Thu, 30 Jul 2026 12:03:00 -0400
-Subject: [PATCH 4/4] Add an independent HDR ITM target option
+Subject: [PATCH 3/3] Add an independent HDR ITM target option
 
 Let a session configure the panel's inverse-tone-mapping ceiling without using
 ENABLE_GAMESCOPE_HDR, which also forces HDR output and ITM on at startup.
@@ -27,4 +26,3 @@ index cc05043..11a8f9d 100755
  		$RESOLUTION \
 -- 
 2.55.0
-
