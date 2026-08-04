@@ -173,6 +173,7 @@ CONFIG_JOYSTICK_XPAD_LEDS=y
 
 # ============== Audio ==============
 CONFIG_SND_SOC_AW88166=m
+CONFIG_SND_SOC_AW88261=m               # KONKR Pocket FIT Elite speaker amp
 # absent snd-seq spams udev at boot — Fedora's snd-pcm modprobe rule pulls it in
 CONFIG_SND_SEQUENCER=m
 
