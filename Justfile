@@ -8,7 +8,7 @@
 # unusably slow.
 
 registry := env("REGISTRY", "localhost/armada-packages")
-packages := "extest lsfg-vk armada-splash inputplumber fex mesa mesa-android mangohud gamescope gamescope-session powerdevil networkmanager jupiter-hw-support kernel"
+packages := "extest lsfg-vk armada-splash inputplumber fex mesa mesa-android mangohud gamescope gamescope-session kwin powerdevil networkmanager jupiter-hw-support kernel"
 
 import? 'Justfile.local'
 
