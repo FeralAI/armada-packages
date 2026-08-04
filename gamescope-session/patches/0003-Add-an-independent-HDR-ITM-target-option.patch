@@ -1,6 +1,6 @@
 From: virtudude <virtudude@protonmail.com>
 Date: Thu, 30 Jul 2026 12:03:00 -0400
-Subject: [PATCH 4/4] Add an independent HDR ITM target option
+Subject: [PATCH 3/3] Add an independent HDR ITM target option
 
 Let a session configure the panel's inverse-tone-mapping ceiling without using
 ENABLE_GAMESCOPE_HDR, which also forces HDR output and ITM on at startup.
@@ -10,7 +10,7 @@ Steam can then own the active HDR state through Gamescope runtime properties.
  1 file changed, 4 insertions(+)
 
 diff --git a/usr/share/gamescope-session-plus/gamescope-session-plus b/usr/share/gamescope-session-plus/gamescope-session-plus
-index b2736d2..34555af 100755
+index cc05043..11a8f9d 100755
 --- a/usr/share/gamescope-session-plus/gamescope-session-plus
 +++ b/usr/share/gamescope-session-plus/gamescope-session-plus
 @@ -237,6 +237,10 @@ if [ -z "$GAMESCOPECMD" ]; then
@@ -25,4 +25,4 @@ index b2736d2..34555af 100755
  		$CURSOR \
  		$RESOLUTION \
 -- 
-2.50.1
+2.55.0

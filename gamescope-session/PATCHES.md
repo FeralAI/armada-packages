@@ -6,9 +6,7 @@ to a commit, or `armada` if it is original; a URL source with no `notes` is verb
 
 - `patches/0001-armada-disable-session-xtrace.patch`
   source: armada
-- `patches/0002-armada-use-no-argument-rotation-shader.patch`
+- `patches/0002-armada-extend-startup-socket-timeout.patch`
   source: armada
-- `patches/0003-armada-extend-startup-socket-timeout.patch`
-  source: armada
-- `patches/0004-armada-add-independent-itm-target.patch`
+- `patches/0003-armada-add-independent-itm-target.patch`
   source: armada
