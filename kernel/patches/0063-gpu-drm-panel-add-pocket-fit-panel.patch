@@ -47,14 +47,14 @@ index 3615a761b44f..5ae127482f10 100644
  obj-$(CONFIG_DRM_PANEL_AR11_5INCH) += panel-ar11-5inch.o
 diff --git a/drivers/gpu/drm/panel/panel-ar14-144hz.c b/drivers/gpu/drm/panel/panel-ar14-144hz.c
 new file mode 100644
-index 000000000000..0685888ab89f
+index 000000000000..5e38005a0398
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ar14-144hz.c
-@@ -0,0 +1,481 @@
+@@ -0,0 +1,551 @@
 +// SPDX-License-Identifier: GPL-2.0-only
-+// Copyright (c) 2026 FIXME
++// Copyright (c) 2026 Philippe Simons <simons.philippe@gmail.com>
 +// Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
-+//   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
++//   Copyright (c) 2013, The Linux Foundation. All rights reserved.
 +
 +#include <linux/backlight.h>
 +#include <linux/delay.h>
@@ -393,19 +393,70 @@ index 000000000000..0685888ab89f
 +	return 0;
 +}
 +
-+static const struct drm_display_mode panel_ar14_144hz_mode = {
-+	.clock = (1080 + 32 + 4 + 32) * (1920 + 38 + 4 + 32) * 144 / 1000,
-+	.hdisplay = 1080,
-+	.hsync_start = 1080 + 32,
-+	.hsync_end = 1080 + 32 + 4,
-+	.htotal = 1080 + 32 + 4 + 32,
-+	.vdisplay = 1920,
-+	.vsync_start = 1920 + 38,
-+	.vsync_end = 1920 + 38 + 4,
-+	.vtotal = 1920 + 38 + 4 + 32,
-+	.width_mm = 0,
-+	.height_mm = 0,
-+	.type = DRM_MODE_TYPE_DRIVER,
++/*
++ * The vendor panel config declares ONE base timing (144 Hz) plus
++ * qcom,dsi-supported-dfps-list = <144 120 90 60> with
++ * dfps_immediate_porch_mode_vfp: lower refresh rates run the SAME pixel
++ * clock with a stretched vertical front porch. The modes below mirror
++ * that scheme (constant clock, VFP-only changes), 144 Hz preferred.
++ */
++static const struct drm_display_mode panel_ar14_144hz_modes[] = {
++	{ /* 144 Hz — the vendor base timing */
++		.clock = (1080 + 32 + 4 + 32) * (1920 + 38 + 4 + 32) * 144 / 1000,
++		.hdisplay = 1080,
++		.hsync_start = 1080 + 32,
++		.hsync_end = 1080 + 32 + 4,
++		.htotal = 1080 + 32 + 4 + 32,
++		.vdisplay = 1920,
++		.vsync_start = 1920 + 38,
++		.vsync_end = 1920 + 38 + 4,
++		.vtotal = 1920 + 38 + 4 + 32,
++		.width_mm = 74,
++		.height_mm = 132,
++		.type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++	},
++	{ /* 120 Hz — VFP stretched, same pixel clock */
++		.clock = (1080 + 32 + 4 + 32) * (1920 + 38 + 4 + 32) * 144 / 1000,
++		.hdisplay = 1080,
++		.hsync_start = 1080 + 32,
++		.hsync_end = 1080 + 32 + 4,
++		.htotal = 1080 + 32 + 4 + 32,
++		.vdisplay = 1920,
++		.vsync_start = 1920 + 437,
++		.vsync_end = 1920 + 437 + 4,
++		.vtotal = 1920 + 437 + 4 + 32,
++		.width_mm = 74,
++		.height_mm = 132,
++		.type = DRM_MODE_TYPE_DRIVER,
++	},
++	{ /* 90 Hz — VFP stretched, same pixel clock */
++		.clock = (1080 + 32 + 4 + 32) * (1920 + 38 + 4 + 32) * 144 / 1000,
++		.hdisplay = 1080,
++		.hsync_start = 1080 + 32,
++		.hsync_end = 1080 + 32 + 4,
++		.htotal = 1080 + 32 + 4 + 32,
++		.vdisplay = 1920,
++		.vsync_start = 1920 + 1234,
++		.vsync_end = 1920 + 1234 + 4,
++		.vtotal = 1920 + 1234 + 4 + 32,
++		.width_mm = 74,
++		.height_mm = 132,
++		.type = DRM_MODE_TYPE_DRIVER,
++	},
++	{ /* 60 Hz — VFP stretched, same pixel clock */
++		.clock = (1080 + 32 + 4 + 32) * (1920 + 38 + 4 + 32) * 144 / 1000,
++		.hdisplay = 1080,
++		.hsync_start = 1080 + 32,
++		.hsync_end = 1080 + 32 + 4,
++		.htotal = 1080 + 32 + 4 + 32,
++		.vdisplay = 1920,
++		.vsync_start = 1920 + 2830,
++		.vsync_end = 1920 + 2830 + 4,
++		.vtotal = 1920 + 2830 + 4 + 32,
++		.width_mm = 74,
++		.height_mm = 132,
++		.type = DRM_MODE_TYPE_DRIVER,
++	},
 +};
 +
 +static enum drm_panel_orientation panel_ar14_144hz_get_orientation(struct drm_panel *panel)
@@ -418,7 +469,26 @@ index 000000000000..0685888ab89f
 +static int panel_ar14_144hz_get_modes(struct drm_panel *panel,
 +				      struct drm_connector *connector)
 +{
-+	return drm_connector_helper_get_modes_fixed(connector, &panel_ar14_144hz_mode);
++	unsigned int i;
++	int count = 0;
++
++	for (i = 0; i < ARRAY_SIZE(panel_ar14_144hz_modes); i++) {
++		struct drm_display_mode *mode;
++
++		mode = drm_mode_duplicate(connector->dev,
++					  &panel_ar14_144hz_modes[i]);
++		if (!mode)
++			return count;
++
++		drm_mode_set_name(mode);
++		drm_mode_probed_add(connector, mode);
++		count++;
++	}
++
++	connector->display_info.width_mm = panel_ar14_144hz_modes[0].width_mm;
++	connector->display_info.height_mm = panel_ar14_144hz_modes[0].height_mm;
++
++	return count;
 +}
 +
 +static const struct drm_panel_funcs panel_ar14_144hz_panel_funcs = {
@@ -532,5 +602,3 @@ index 000000000000..0685888ab89f
 +MODULE_AUTHOR("ROCKNIX");
 +MODULE_DESCRIPTION("DRM driver for ar14 1080p 144hz video mode dsi panel");
 +MODULE_LICENSE("GPL");
--- 
-2.52.0
