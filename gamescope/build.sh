@@ -5,7 +5,7 @@ set -euxo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 PACKAGE_DIR="${PWD}"
 
-source ./BASE.env
+source ../TERRA.env
 source ../toolchain.env
 
 rm -rf out
@@ -14,7 +14,7 @@ podman run --rm \
   --volume "${PACKAGE_DIR}:/work:Z" \
   --workdir /work \
   --platform linux/aarch64 \
-  --env COMMIT="${COMMIT}" \
+  --env TERRA_COMMIT="${TERRA_COMMIT}" \
   --env ARMADA_MARCH="${ARMADA_MARCH}" \
   "${BUILDER_IMAGE}" \
   bash -euxo pipefail -c '
@@ -34,7 +34,7 @@ EOF
 
     cd /tmp/packages
 
-    git checkout ${COMMIT}
+    git checkout ${TERRA_COMMIT}
 
     PKG=anda/games/terra-gamescope
     SPEC="${PKG}/terra-gamescope.spec"
