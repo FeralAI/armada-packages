@@ -59,6 +59,7 @@
 1001-haptics-driver-support-periodic-sine-and-fixes.patch
 1002-input-rsinput-sm8750-ff.patch
 1003-input-haptics-fix-rumble-bridge-atomic-sleep.patch
+1004-input-haptics-stop-zero-amplitude-immediately.patch
 1300-input-rsinput-axis-deadzone.patch
 
 # ============== Audio ==============
