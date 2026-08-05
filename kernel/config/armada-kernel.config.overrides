@@ -157,6 +157,7 @@ CONFIG_BACKLIGHT_AW99706=y                # KONKR Pocket FIT Elite
 # the rootfs). Gated by LEDS_CLASS_MULTICOLOR, which must be =y too.
 CONFIG_LEDS_CLASS_MULTICOLOR=y
 CONFIG_LEDS_QCOM_LPG=y
+CONFIG_LEDS_PWM_MULTICOLOR=y              # Odin 2 stick/side RGB (sn3112 PWM)
 
 # ============== HID stack ==============
 CONFIG_INPUT_UINPUT=y

@@ -126,8 +126,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0058-input-joystick-add-ayaneo-mcu-joystick.patch
   upstream: unknown
 - `patches/0069-input-misc-add-konkr-sysbtn-MCU-system-buttons.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0069-input-misc-add-konkr-sysbtn-MCU-system-buttons.patch
+  source: https://github.com/ROCKNIX/distribution/blob/024028b4f3fdd139ae1e575efb25914b8f76595d/projects/ROCKNIX/devices/SM8750/patches/linux/0069-input-misc-add-konkr-sysbtn-MCU-system-buttons.patch
   upstream: unknown
+  notes: Updated to ROCKNIX #3089, which adds the MCU-rendered stick lighting effects (sysfs "effect": static/breath/rainbow) and fixes the PM notifier to replay the active lighting mode after resume instead of only the last static colour.
 - `patches/0031_input--Add-driver-for-RSInput-Gamepad.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0031_input--Add-driver-for-RSInput-Gamepad.patch
   upstream: unknown
@@ -190,8 +191,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0030-leds-Add-driver-for-HEROIC-HTR3212.patch
   upstream: unknown
 - `patches/0054_sn3112-pwm-driver.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0054_sn3112-pwm-driver.patch
+  source: https://github.com/ROCKNIX/distribution/blob/4609c5017f350e6e2307ec909e328454d5bec062/projects/ROCKNIX/devices/SM8550/patches/linux/0054_sn3112-pwm-driver.patch
   upstream: https://lore.kernel.org/r/20240424-ayn-odin2-initial-v1-2-e0aa05c991fd@gmail.com
+  notes: Includes ROCKNIX #3110's fix for the arm64 probe crash: set_bit()/clear_bit() on a cast uint8_t[3] alignment-faults under LSE atomics, replaced with plain bitwise ops under priv->lock. The matching Odin 2 DTS change re-enables the sn3112 nodes that were disabled to dodge the crash.
 - `patches/20260424_neil_armstrong_arm64_dts_qcom_sm8_456_50_add_missing_cx_power_domain_to_gcc.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/20260424_neil_armstrong_arm64_dts_qcom_sm8_456_50_add_missing_cx_power_domain_to_gcc.patch
   upstream: https://lore.kernel.org/r/20260615-topic-sm8x50-tie-gcc-to-cx-v2-0-6b5752dd4747@linaro.org
@@ -218,8 +220,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   upstream: https://lore.kernel.org/r/20250728-topic-gpucc_power_plumbing-v1-22-09c2480fe3e6@oss.qualcomm.com
 - `patches/0121-pmdomain-qcom-rpmhpd-no-max-clamp-on-gmu-rails.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0121-pmdomain-qcom-rpmhpd-no-max-clamp-on-gmu-rails.patch
+  source: https://github.com/ROCKNIX/distribution/blob/0599090d7e733fa59d7de63982326d5e5a57cbd6/projects/ROCKNIX/devices/SM8750/patches/linux/0052-pmdomain-qcom-rpmhpd-no-max-clamp-on-gmu-rails.patch
   upstream: unknown
-  notes: Armada gives SM8550 a private GFX domain descriptor so ROCKNIX's ACD-clamp workaround cannot change GPU rail initialization on other SoCs. ROCKNIX's inert SM8550 `gmxc` change is omitted.
+  notes: Armada uses private state_synced descriptors (gfx_gmu for SM8550+SM8750, gmxc_sm8750) so the ACD-clamp workaround cannot change GPU rail initialization on other SoCs; ROCKNIX #3045 instead marks the shared gfx/gmxc structs, which would leak onto every SoC sharing them in a combined kernel. SM8650 is intentionally left clamped pending evidence of the problem there.
 - `patches/0122-interconnect__qcom__sm8550__Enable_QoS_configuration.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0122-interconnect__qcom__sm8550__Enable_QoS_configuration.patch
   upstream: unknown
