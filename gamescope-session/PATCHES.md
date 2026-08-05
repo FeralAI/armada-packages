@@ -20,3 +20,5 @@ to a commit, or `armada` if it is original; a URL source with no `notes` is verb
   source: https://github.com/OpenGamingCollective/gamescope-session/commit/c01b4bff0eba5a64455b610c212265c76e339b62
 - `patches/0008-source-armada-specific-quirks.patch`
   source: armada
+- `patches/0009-add-drm-lease-functions.patch`
+  source: armada
