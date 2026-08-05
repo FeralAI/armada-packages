@@ -271,9 +271,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8650/patches/linux/v2_20260420_neil_armstrong_arm64_qcom_sm8650_misc_enhancements.patch
   upstream: https://lore.kernel.org/r/20260615-topic-sm8650-upstream-cpu-props-v3-0-eeb6e9fa7581@linaro.org
 - `patches/0063-gpu-drm-panel-add-pocket-fit-panel.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8650/patches/linux/0063-gpu-drm-panel-add-pocket-fit-panel.patch
+  source: https://github.com/ROCKNIX/distribution/blob/5cff2f7918ca6bd56d8a884f0837309529a058bc/projects/ROCKNIX/devices/SM8750/patches/linux/0055-gpu-drm-panel-add-pocket-fit-panel.patch
   upstream: unknown
-  notes: Armada rebased the ROCKNIX patch so it applies after the current panel patches; its behavior is unchanged.
+  notes: Armada rebased the ROCKNIX patch so it applies after the current panel patches. Synced to the SM8750 four-mode variant (144/120/90/60 Hz); the SM8650 single-mode file it previously tracked exposes 144 Hz only.
 - `patches/0064-input-touchscreen-add-rocknix-chipone-tddi.patch`
   source: https://github.com/ROCKNIX/chipone_tddi/commit/af27029fa2b27c4a77d16809298ed5d03c9da5a6
   upstream: unknown
