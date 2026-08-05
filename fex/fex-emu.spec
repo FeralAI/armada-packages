@@ -22,7 +22,7 @@
 %global sysroot_version fc44-armada
 
 Name:       fex-emu
-# RPM version sort: 2607^<date>git<sha> > 2607 (release) < 2608 (next release).
+# RPM version sort: 2608^<date>git<sha> > 2608 (release) < 2609 (next release).
 Version:    %{base_version}^%{date}git%{shortcommit}
 Release:    1%{?dist}.armada
 Summary:    Fast usermode x86 and x86-64 emulator for ARM64
@@ -302,7 +302,6 @@ fi
 %{_bindir}/FEX
 %{_bindir}/FEXBash
 %{_bindir}/FEXGetConfig
-%{_bindir}/FEXInterpreter
 %{_bindir}/FEXOfflineCompiler
 %{_bindir}/FEXpidof
 %{_bindir}/FEXServer
