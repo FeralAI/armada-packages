@@ -143,6 +143,7 @@ v2_20260420_neil_armstrong_arm64_qcom_sm8650_misc_enhancements.patch
 0066-scsi-ufs-ufs-qcom-add-sm8750-compatible.patch
 0509-soc-qcom-pmic_glink_altmode-defer-until-mux-switch-ready.patch
 0517-usb-typec-mux-dont-swallow-EPROBE_DEFER.patch
+0519-usb-typec-ucsi-clear-USB-role.patch
 0603-ASoC-codecs-wcd939x-keep-the-codec-resumed-while-a-ja.patch
 0060-ASoC-qcom-sc8280xp-enable-MI2S-bit-clock-on-BE-startup.patch
 0072-ASoC-lpass-rx-macro-add-HPH-PCM-mode.patch
