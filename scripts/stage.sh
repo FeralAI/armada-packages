@@ -12,6 +12,6 @@ case "${pkg}" in
     lsfg-vk)      cp lsfg-vk/out/liblsfg-vk.so ctx/ ;;
     mesa-android) mkdir -p ctx/waydroid && cp -r mesa-android/out/vendor ctx/waydroid/ ;;
     kernel)       mkdir -p ctx/kernel && cp kernel/out/armada-kernel-*.tar.zst kernel/out/armada-kernel-*.tar.zst.sha256 ctx/kernel/ ;;
-    armada-splash|fex|mesa|mangohud|gamescope|gamescope-session|kwin|powerdevil|inputplumber|networkmanager|jupiter-hw-support) mkdir -p ctx/rpms && cp "${pkg}"/out/*.rpm ctx/rpms/ ;;
+    armada-splash|fex|mesa|mangohud|gamescope|gamescope-session|kwin|powerdevil|inputplumber|networkmanager|jupiter-hw-support|umtp-responder) mkdir -p ctx/rpms && cp "${pkg}"/out/*.rpm ctx/rpms/ ;;
     *) echo "unknown package: ${pkg}" >&2; exit 1 ;;
 esac
