@@ -24,3 +24,5 @@ to a commit, or `armada` if it's original; a URL source with no `notes` is verba
   source: armada
 - `patches/0010-fix-arm64-steam-night-mode.patch`
   source: armada
+- `patches/0011-main-add-opt-in-force-vulkan-realtime.patch`
+  source: armada
