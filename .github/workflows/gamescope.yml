@@ -4,6 +4,11 @@ on:
     branches: [main]
     paths: ['gamescope/**', 'oci/**', '.github/workflows/gamescope.yml', '.github/workflows/_package-image.yml', 'toolchain.env']
   workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build and publish as a matching container tag. Leave empty to use the workflow ref."
+        type: string
+        default: ""
 permissions:
   contents: read
   packages: write
@@ -14,3 +19,4 @@ jobs:
     secrets: inherit
     with:
       package: gamescope
+      branch: ${{ inputs.branch || '' }}

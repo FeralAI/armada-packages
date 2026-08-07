@@ -4,6 +4,11 @@ on:
     branches: [main]
     paths: ['mesa-android/**', 'mesa/patches/**', 'mesa/BASE.env', 'oci/**', '.github/workflows/mesa-android.yml', '.github/workflows/_package-image.yml', 'toolchain.env']
   workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build and publish as a matching container tag. Leave empty to use the workflow ref."
+        type: string
+        default: ""
 permissions:
   contents: read
   packages: write
@@ -14,6 +19,7 @@ jobs:
     secrets: inherit
     with:
       package: mesa-android
+      branch: ${{ inputs.branch || '' }}
       # Cross-compiled, so x86_64 is native here; the artifacts stay Android arm64.
       runner: ubuntu-24.04
       image_arch: arm64

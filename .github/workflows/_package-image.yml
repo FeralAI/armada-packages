@@ -9,6 +9,11 @@ on:
         description: "Image name suffix under ghcr.io/<owner>/armada-packages/"
         required: true
         type: string
+      branch:
+        description: "Branch to build and publish as a matching container tag"
+        required: false
+        type: string
+        default: ""
       runner:
         description: "Runner to build on. Cross-compiled packages can use x86_64."
         required: false
@@ -28,7 +33,7 @@ jobs:
   build:
     runs-on: ${{ inputs.runner }}   # default is native aarch64; free for public repos
     concurrency:
-      group: ${{ inputs.package }}-image
+      group: ${{ inputs.package }}-image-${{ inputs.branch || github.ref }}
       cancel-in-progress: true
     permissions:
       contents: read
@@ -40,7 +45,28 @@ jobs:
       IMAGE: ghcr.io/${{ github.repository_owner }}/armada-packages/${{ inputs.package }}
       CCACHE_DIR: ${{ github.workspace }}/.ccache
     steps:
-      - uses: actions/checkout@v4
+      - name: Resolve manual build ref
+        id: manual
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          branch="${INPUT_BRANCH}"
+          if [ -z "${branch}" ]; then
+            exit 0
+          fi
+          branch="${branch#refs/heads/}"
+          if ! [[ "${branch}" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::Branch '${branch}' cannot be used as a matching container tag. Start with a letter, number, or underscore; remaining characters may also include dots or dashes."
+            exit 1
+          fi
+
+          echo "branch=${branch}" >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.manual.outputs.branch || github.sha }}
 
       - name: Tooling
         run: |
@@ -72,22 +98,28 @@ jobs:
 
       - name: Build + push
         id: push
+        env:
+          CHANNEL_TAG: ${{ steps.manual.outputs.branch || 'latest' }}
         run: |
-          TAG="$(date -u +%Y%m%d)-${GITHUB_SHA::8}"
+          IMMUTABLE_TAG="$(date -u +%Y%m%d)-$(git rev-parse --short=8 HEAD)"
           ARCH_FLAG=()
           if [ -n "${{ inputs.image_arch }}" ]; then
             ARCH_FLAG=(--arch "${{ inputs.image_arch }}")
           fi
-          buildah build "${ARCH_FLAG[@]}" -f oci/Containerfile -t "${IMAGE}:${TAG}" .
-          buildah tag "${IMAGE}:${TAG}" "${IMAGE}:latest"
+          buildah build "${ARCH_FLAG[@]}" -f oci/Containerfile -t "${IMAGE}:${IMMUTABLE_TAG}" .
+          buildah tag "${IMAGE}:${IMMUTABLE_TAG}" "${IMAGE}:${CHANNEL_TAG}"
           echo "${{ secrets.GITHUB_TOKEN }}" | buildah login -u "${{ github.actor }}" --password-stdin ghcr.io
-          buildah push "${IMAGE}:${TAG}"
-          buildah push --digestfile /tmp/digest "${IMAGE}:latest"
+          buildah push "${IMAGE}:${IMMUTABLE_TAG}"
+          buildah push --digestfile /tmp/digest "${IMAGE}:${CHANNEL_TAG}"
           DIGEST="$(cat /tmp/digest)"
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           {
             echo "### \`${{ inputs.package }}\` published"
-            echo "Pin in armada's Containerfile:"
+            echo "Branch/channel tag:"
+            echo '```'
+            echo "${IMAGE}:${CHANNEL_TAG}"
+            echo '```'
+            echo "Immutable digest pin for armada's Containerfile:"
             echo '```'
             echo "${IMAGE}@${DIGEST}"
             echo '```'
