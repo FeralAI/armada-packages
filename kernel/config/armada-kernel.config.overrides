@@ -179,6 +179,7 @@ CONFIG_SND_SOC_AW88261=m               # KONKR Pocket FIT Elite speaker amp
 CONFIG_SND_SEQUENCER=m
 
 # ============== Gaming performance (scheduler / memory / sync) ==============
+CONFIG_PROC_CHILDREN=y
 CONFIG_UCLAMP_TASK=y                         # armada-powerd sets cpu.uclamp.min per game
 CONFIG_UCLAMP_TASK_GROUP=y
 CONFIG_SCHED_CLASS_EXT=y                     # sched_ext; needed by scx_lavd
