@@ -610,6 +610,18 @@ static int x11_init(void) {
                     XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&appid_l, 1);
     XStoreName(x_dpy, x_win, "armada-splash");
     XSelectInput(x_dpy, x_win, ExposureMask | StructureNotifyMask);
+    // Keep controller mouse emulation invisible until Steam takes over.
+    static const char blank_bits[] = { 0 };
+    Pixmap blank = XCreateBitmapFromData(x_dpy, x_win, blank_bits, 1, 1);
+    if (blank) {
+        XColor color = { 0 };
+        Cursor cursor = XCreatePixmapCursor(x_dpy, blank, blank, &color, &color, 0, 0);
+        if (cursor) {
+            XDefineCursor(x_dpy, x_win, cursor);
+            XFreeCursor(x_dpy, cursor);
+        }
+        XFreePixmap(x_dpy, blank);
+    }
     // gamescope's DISPLAY focus; X input focus ping-pongs to Steam's invisible
     // windows during bring-up and is useless for takeover detection.
     a_focused_win = XInternAtom(x_dpy, "GAMESCOPE_FOCUSED_WINDOW", False);
