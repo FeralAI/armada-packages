@@ -36,8 +36,8 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0052-gpu-panel-add-Pocket-DMG-panel-driver.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0052-gpu-panel-add-Pocket-DMG-panel-driver.patch
   upstream: unknown
-- `patches/0053-gpu-panel-add-Pocket-DS-lower-panel-driver.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0053-gpu-panel-add-Pocket-DS-lower-panel-driver.patch
+- `patches/0053-gpu-panel-st7703-add-Pocket-DS-lower-panel.patch`
+  source: https://github.com/ROCKNIX/distribution/blob/7651a1b97d762d2c7dc335fa82a7a254c3a12927/projects/ROCKNIX/devices/SM8550/patches/linux/0053-gpu-panel-st7703-add-Pocket-DS-lower-panel.patch
   upstream: https://lore.kernel.org/r/20260723-b4-st7703-pocketds-lower-v1-2-e3db246589f4@gmail.com
 - `patches/0055_Synaptics-TD4328-LCD-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0055_Synaptics-TD4328-LCD-panel.patch
@@ -69,9 +69,11 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0060-backlight-Add-SY7758-LED-driver.patch`
   source: https://patchwork.kernel.org/project/dri-devel/patch/20260529-topic-sm8650-ayaneo-pocket-s2-sy7758-v5-2-03aacd49747c@linaro.org/
   upstream: https://lore.kernel.org/r/178300990349.2239788.13080024963462152507.b4-ty@b4
+  notes: Armada made the enable GPIO optional (`devm_gpiod_get_optional`). The AYANEO Pocket DS wires no discrete enable line to its SY7758, and requiring one left the whole lower DSI chain deferred; boards that do have one are unaffected. The binding patch carries the matching change.
 - `patches/0060-dt-bindings-silergy-sy7758.patch`
   source: https://patchwork.kernel.org/project/dri-devel/patch/20260529-topic-sm8650-ayaneo-pocket-s2-sy7758-v5-1-03aacd49747c@linaro.org/
   upstream: https://lore.kernel.org/r/178300990349.2239788.13080024963462152507.b4-ty@b4
+  notes: Armada dropped `enable-gpios` from the required list to match the driver change above; the AYANEO Pocket DS reaches its SY7758 without a separately described enable pin.
 - `patches/0054-regulator-add-sgm3804-i2c-regulator-for-panel-power-.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0054-regulator-add-sgm3804-i2c-regulator-for-panel-power-.patch
   upstream: unknown
@@ -277,7 +279,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0063-gpu-drm-panel-add-pocket-fit-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/5cff2f7918ca6bd56d8a884f0837309529a058bc/projects/ROCKNIX/devices/SM8750/patches/linux/0055-gpu-drm-panel-add-pocket-fit-panel.patch
   upstream: unknown
-  notes: Armada rebased the ROCKNIX patch so it applies after the current panel patches. Synced to the SM8750 four-mode variant (144/120/90/60 Hz); the SM8650 single-mode file it previously tracked exposes 144 Hz only.
+  notes: Armada refreshed the Kconfig and Makefile context so it applies after the current panel patches; driver behavior is unchanged. Synced to the SM8750 four-mode variant (144/120/90/60 Hz); the SM8650 single-mode file it previously tracked exposes 144 Hz only.
 - `patches/0064-input-touchscreen-add-rocknix-chipone-tddi.patch`
   source: https://github.com/ROCKNIX/chipone_tddi/commit/af27029fa2b27c4a77d16809298ed5d03c9da5a6
   upstream: unknown
@@ -306,9 +308,10 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0005-sm8250-uart.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0005-sm8250-uart.patch
   upstream: unknown
-- `patches/9998-gpu-opp-table.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/e485495a942daba186d4a8543e18a1ad09c9a5d5/projects/ROCKNIX/devices/SM8250/patches/linux/9998-gpu-opp-table.patch
+- `patches/9998-sm8250-gpu-tuning.patch`
+  source: https://github.com/ROCKNIX/distribution/blob/f3e2b6187cd2ae2dc5122edfebe84228a314f2c5/projects/ROCKNIX/devices/SM8250/patches/linux/9998-gpu-tuning.patch
   upstream: unknown
+  notes: Contents are verbatim; Armada renamed the file from the ROCKNIX `9998-gpu-tuning.patch`.
 - `patches/0001-msm-dsi-restore-wide_bus-bpp-calculation.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0001-msm-dsi-restore-wide_bus-bpp-calculation.patch
   upstream: unknown
@@ -353,6 +356,12 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: armada
   upstream: local
   notes: Armada expands the SM8750 GPU register mapping to `0x6c000` so Linux 7.1's A8xx recovery path can access RSCC at GPU offset `0x50000` without faulting.
+- `patches/0035-arm64-dts-qcom-sm8750-set-CPU-capacity-dmips-mhz.patch`
+  source: https://github.com/ROCKNIX/distribution/blob/f3e2b6187cd2ae2dc5122edfebe84228a314f2c5/projects/ROCKNIX/devices/SM8750/patches/linux/0076-arm64-dts-qcom-sm8750-set-CPU-capacity-dmips-mhz.patch
+  upstream: unknown
+- `patches/0037-arm64-dts-qcom-sm8750-add-CPU-thermal-cooling.patch`
+  source: https://github.com/ROCKNIX/distribution/blob/b1e9d07b251c5a013d303a518106c547db001b74/projects/ROCKNIX/devices/SM8750/patches/linux/0075-arm64-dts-qcom-sm8750-add-CPU-thermal-cooling.patch
+  upstream: unknown
 - `patches/0049-drm-msm-a8xx-add-adreno-830-catalog.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0049-drm-msm-a8xx-add-adreno-830-catalog.patch
   upstream: unknown
@@ -498,7 +507,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pockets2k.dts`.
 - `dts/qcs8550-ayaneo-pocketds.dts.patch`
   source: armada
-  notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocketds.dts`.
+  notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocketds.dts`. It moves the lower panel onto the ST7703 driver contract: `vcc-supply` for the SGM3804 charge pump, and the former `enable-gpio` on TCA6408 GPIO0 re-modeled as a fixed regulator consumed as `iovcc-supply`.
 - `dts/qcs8550-ayn-common.dtsi.patch`
   source: armada
   notes: Armada removes the SDHCI capability mask and marks the shared RSInput node as connected to the PM8550B haptics device declared in the same common tree. This intentionally covers the AYN and Retroid products that inherit both nodes, including Pocket 6 and Nova.

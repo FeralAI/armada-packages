@@ -14,9 +14,9 @@ diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
 index 407c5f6a268b..6481e0100061 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
-@@ -47,6 +47,19 @@ config DRM_PANEL_AR11_5INCH
-          Say Y here if you want to enable support for Ayaneo Pocket DS
-          1024x768Panel.
+@@ -37,6 +37,19 @@
+ 	  Say Y here if you want to enable support for Ayaneo Pocket DMG
+ 	  1080x1240 60hz Panel.
  
 +config DRM_PANEL_AR14
 +	tristate "Ayaneo Pocket FIT panel driver"
@@ -44,7 +44,7 @@ index 3615a761b44f..5ae127482f10 100644
 +obj-$(CONFIG_DRM_PANEL_AR14) += panel-ar14-144hz.o
  obj-$(CONFIG_DRM_PANEL_AR06_4INCH) += panel-ar06-4inch.o
  obj-$(CONFIG_DRM_PANEL_AR02_3INCH) += panel-ar02-3inch.o
- obj-$(CONFIG_DRM_PANEL_AR11_5INCH) += panel-ar11-5inch.o
+ obj-$(CONFIG_DRM_PANEL_ARM_VERSATILE) += panel-arm-versatile.o
 diff --git a/drivers/gpu/drm/panel/panel-ar14-144hz.c b/drivers/gpu/drm/panel/panel-ar14-144hz.c
 new file mode 100644
 index 000000000000..5e38005a0398
