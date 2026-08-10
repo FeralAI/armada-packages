@@ -18,16 +18,16 @@ diff --git a/drivers/pmdomain/qcom/rpmhpd.c b/drivers/pmdomain/qcom/rpmhpd.c
 @@ -122,6 +122,12 @@
  	.res_name = "gfx.lvl",
  };
-
+ 
 +static struct rpmhpd gfx_gmu = {
 +	.pd = { .name = "gfx", },
 +	.res_name = "gfx.lvl",
 +	.state_synced = true,
 +};
 +
- static struct rpmhpd lcx = {
- 	.pd = { .name = "lcx", },
- 	.res_name = "lcx.lvl",
+ static struct rpmhpd gfx1 = {
+ 	.pd = { .name = "gfx1", },
+ 	.res_name = "gfx1.lvl",
 @@ -227,6 +233,12 @@
  	.res_name = "gmxc.lvl",
  };

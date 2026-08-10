@@ -29,39 +29,42 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0028-drm-panel-Add-panel-driver-for-Chipone-ICNA35XX-base.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0028-drm-panel-Add-panel-driver-for-Chipone-ICNA35XX-base.patch
   upstream: https://lore.kernel.org/r/20260607-icna35xx-v4-2-64de514add34@gmail.com
-  notes: The linked upstream patch is still proposed. The ROCKNIX patch is a different implementation. Armada refreshed only its Makefile context so it applies after the XM91080G panel patch; driver behavior is unchanged.
+  notes: The carried implementation differs from the linked upstream submission and is ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0051-gpu-panel-add-Pocket-ACE-panel-driver.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0051-gpu-panel-add-Pocket-ACE-panel-driver.patch
   upstream: unknown
+  notes: Ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0052-gpu-panel-add-Pocket-DMG-panel-driver.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0052-gpu-panel-add-Pocket-DMG-panel-driver.patch
   upstream: unknown
+  notes: Ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0053-gpu-panel-st7703-add-Pocket-DS-lower-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/7651a1b97d762d2c7dc335fa82a7a254c3a12927/projects/ROCKNIX/devices/SM8550/patches/linux/0053-gpu-panel-st7703-add-Pocket-DS-lower-panel.patch
   upstream: https://lore.kernel.org/r/20260723-b4-st7703-pocketds-lower-v1-2-e3db246589f4@gmail.com
 - `patches/0055_Synaptics-TD4328-LCD-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0055_Synaptics-TD4328-LCD-panel.patch
   upstream: https://lore.kernel.org/r/20240424-ayn-odin2-initial-v1-4-e0aa05c991fd@gmail.com
-  notes: The linked upstream patch is still proposed. ROCKNIX carries an earlier work-in-progress implementation of the Odin 2 panel driver. Armada refreshed the Kconfig context for Linux 7.1's Synaptics TDDI entry; driver behavior is unchanged.
+  notes: The carried implementation predates the linked upstream submission and is ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0056_Xm-Plus-XM91080G-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0056_Xm-Plus-XM91080G-panel.patch
   upstream: unknown
-  notes: Armada refreshed the ROCKNIX Makefile hunk so this prerequisite applies before the ICNA35XX panel patch; its behavior is unchanged.
+  notes: Ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0057_DDIC-CH13726A-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0057_DDIC-CH13726A-panel.patch
   upstream: unknown
-  notes: Armada carries the 120 ms sleep-out delay from ROCKNIX's SM8250 copy, but the driver is shared, so the delay applies to every device using this panel, including Thor. Armada only refreshed the patch metadata after importing that functional change.
+  notes: Retains additional compatibles and the 120 ms sleep-out delay, using Linux 7.2's managed DRM panel allocator.
 - `patches/0062-gpu-drm-panel-add-wt0630-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0062-gpu-drm-panel-add-wt0630-panel.patch
   upstream: https://lore.kernel.org/r/20260625-topic-sm8650-ayaneo-pocket-s2-r63419-v8-2-8570e692143e@linaro.org
+  notes: Ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0104-drm-panel-Add-Retroid-Pocket-6-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0104-drm-panel-Add-Retroid-Pocket-6-panel.patch
   upstream: unknown
-  notes: Armada refreshed only the Makefile context so the patch applies after the AYANEO WT0600 panel patch; driver behavior is unchanged.
+  notes: Ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0105-drm-panel-Add-Retroid-Pocket-Nova-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0105-drm-panel-Add-Retroid-Pocket-Nova-panel.patch
   upstream: unknown
-  notes: Armada refreshed only the Makefile context for Linux 7.1's split ILI9806E objects; Nova panel-driver behavior is unchanged.
+  notes: Ported to Linux 7.2's managed DRM panel allocator.
 - `patches/0058_AYN-Odin2-Mini--backlight.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0058_AYN-Odin2-Mini--backlight.patch
   upstream: unknown
@@ -75,9 +78,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   upstream: https://lore.kernel.org/r/178300990349.2239788.13080024963462152507.b4-ty@b4
   notes: Armada dropped `enable-gpios` from the required list to match the driver change above; the AYANEO Pocket DS reaches its SY7758 without a separately described enable pin.
 - `patches/0054-regulator-add-sgm3804-i2c-regulator-for-panel-power-.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0054-regulator-add-sgm3804-i2c-regulator-for-panel-power-.patch
-  upstream: unknown
-  notes: No equivalent upstream submission was found. A [related driver was accepted upstream](https://lore.kernel.org/r/177966214295.70905.14964085869538189497.b4-ty@b4), but it exposes separate `pos` and `neg` regulators and is not compatible with ROCKNIX's single-regulator device tree. Armada carries ROCKNIX's newer Pocket FIT Elite revision, including its safe optional second-reset handling, with only the Makefile context refreshed for Linux 7.1.
+  source: armada
+  upstream: local
+  notes: Armada adds compatibility for existing flat fixed-5-V nodes; child-regulator nodes use the Linux 7.2 upstream behavior unchanged.
 - `patches/0056-backlight-aw99706-enable-hwen-before-chip-id-read.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0056-backlight-aw99706-enable-hwen-before-chip-id-read.patch
   upstream: unknown
@@ -134,10 +137,6 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0031_input--Add-driver-for-RSInput-Gamepad.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0031_input--Add-driver-for-RSInput-Gamepad.patch
   upstream: unknown
-- `patches/0006-hid-playstation-expose-DualSense-Edge-Fn-and-back-paddles.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/packages/linux/patches/mainline/0006-hid-playstation-expose-DualSense-Edge-Fn-and-back-paddles.patch
-  upstream: https://lore.kernel.org/r/20260407044008.40222-1-awebster@gmail.com
-  notes: Armada refreshed only the hunk context for Linux 7.1; DualSense Edge button behavior is unchanged.
 - `patches/0508-input-rsinput-add-pm-resume-to-reinit-mcu-after-suspend.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0508-input-rsinput-add-pm-resume-to-reinit-mcu-after-suspend.patch
   upstream: unknown
@@ -206,21 +205,26 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/v9_20260729_qualcomm_crypto_qce_runtime_pm_interconnect.patch`
   source: https://lore.kernel.org/r/20260729110455.641256-1-kuldeep.singh@oss.qualcomm.com
   upstream: https://lore.kernel.org/r/20260729110455.641256-1-kuldeep.singh@oss.qualcomm.com
-  notes: Armada replaced ROCKNIX's defective older import with the proposed v9 patch and refreshed only its include context for Linux 7.1.5; runtime-PM and interconnect behavior is unchanged.
+  notes: Refreshed only its include context for Linux 7.2; runtime-PM and interconnect behavior is unchanged.
 - `patches/0504-wakeup-qcom-ipcc-remove-IRQF-NO-SUSPEND.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0504-wakeup-qcom-ipcc-remove-IRQF-NO-SUSPEND.patch
+  source: https://github.com/ROCKNIX/distribution/commit/f955f5b6137554253e4d52bbe72f9b4936fb253d
   upstream: unknown
-  notes: Armada limits ROCKNIX's suspend IRQ change to `qcom,sm8750-ipcc`, preserving the original flags on the SM8250 devices that also use suspend-to-RAM.
+  notes: Armada limits the SM8550/SM8750 workaround to their IPCC compatibles, preserving `IRQF_NO_SUSPEND` elsewhere.
 - `patches/0505-msm_gem-lock-before-put_iova_spaces.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0505-msm_gem-lock-before-put_iova_spaces.patch
   upstream: unknown
+- `patches/0510-soc-qcom-ice-unwind-clocks-on-resume-failure.patch`
+  source: armada
+  upstream: local
+- `patches/0511-scsi-ufs-qcom-reenable-irq-on-host-reset-failure.patch`
+  source: armada
+  upstream: local
+- `patches/0512-PCI-qcom-skip-L23-ready-poll-on-SM8550.patch`
+  source: armada
+  upstream: local
 - `patches/0001-pcie-update-sm8550-dtsi.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0001-pcie-update-sm8550-dtsi.patch
   upstream: https://lore.kernel.org/r/20260611-wake-v2-33-2744251b1181@oss.qualcomm.com
-- `patches/0101-v3_20260219_webgeek1234_arm64_qcom_sm8550_add_ddr_llcc_l3_cpu_bandwidth_scaling.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0101-v3_20260219_webgeek1234_arm64_qcom_sm8550_add_ddr_llcc_l3_cpu_bandwidth_scaling.patch
-  upstream: https://lore.kernel.org/r/20260330-sm8550-ddr-bw-scaling-v4-1-5020c06983a0@gmail.com
-  notes: Armada refreshed only the CPU2 hunk context for Linux 7.1's existing L2 cache node; the ROCKNIX OPP and bandwidth payload is unchanged.
 - `patches/0120-20250728_konradybcio_gpu_cc_power_requirements_reality_check.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0120-20250728_konradybcio_gpu_cc_power_requirements_reality_check.patch
   upstream: https://lore.kernel.org/r/20250728-topic-gpucc_power_plumbing-v1-22-09c2480fe3e6@oss.qualcomm.com
@@ -264,7 +268,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0009-ASoC-qcom-sc8280xp-add-Ayaneo-Pocket-S2-card.patch`
   source: https://lore.kernel.org/r/20260728-topic-sm8650-ayaneo-pocket-s2-wsa2-fix-v3-3-b29f44720178@linaro.org
   upstream: https://lore.kernel.org/r/178550094533.136247.8108653420741029312.b4-ty@b4
-  notes: Backported to Armada's 7.1 machine-driver layout; the accepted WSA2 channel map and constraints are unchanged
+  notes: Backported to Armada's Linux 7.2 machine-driver layout; the accepted WSA2 channel map and constraints are unchanged.
 - `patches/0010-ASoC-qcom-add-KONKR-Pocket-FIT-WSA2-card.patch`
   source: armada
   upstream: local
@@ -279,7 +283,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0063-gpu-drm-panel-add-pocket-fit-panel.patch`
   source: https://github.com/ROCKNIX/distribution/blob/5cff2f7918ca6bd56d8a884f0837309529a058bc/projects/ROCKNIX/devices/SM8750/patches/linux/0055-gpu-drm-panel-add-pocket-fit-panel.patch
   upstream: unknown
-  notes: Armada refreshed the Kconfig and Makefile context so it applies after the current panel patches; driver behavior is unchanged. Synced to the SM8750 four-mode variant (144/120/90/60 Hz); the SM8650 single-mode file it previously tracked exposes 144 Hz only.
+  notes: Uses the four-mode SM8750 variant and Linux 7.2's managed DRM panel allocator.
 - `patches/0064-input-touchscreen-add-rocknix-chipone-tddi.patch`
   source: https://github.com/ROCKNIX/chipone_tddi/commit/af27029fa2b27c4a77d16809298ed5d03c9da5a6
   upstream: unknown
@@ -304,7 +308,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0011-qcom-pm8150b-charger.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0011-qcom-pm8150b-charger.patch
   upstream: unknown
-  notes: Armada refreshed only the Makefile context for Linux 7.1's additional power-supply drivers; charger and fuel-gauge behavior is unchanged.
+  notes: Armada refreshed only the Makefile context for Linux 7.2's expanded Surface power-supply entries; charger and fuel-gauge behavior is unchanged.
 - `patches/0005-sm8250-uart.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0005-sm8250-uart.patch
   upstream: unknown
@@ -322,7 +326,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0062_wsa881x-shared-powerdown-gpio.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0062_wsa881x-shared-powerdown-gpio.patch
   upstream: unknown
-  notes: Armada refreshed only the hunk context for strict zero-fuzz application on Linux 7.1; shared powerdown-GPIO behavior is unchanged.
+  notes: Ported to Linux 7.2's `GPIOD_OUT_LOW` initialization while retaining the non-exclusive request needed by boards whose two amplifiers share one powerdown GPIO.
 - `patches/0100-revert-force-16bit-audio.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0100-revert-force-16bit-audio.patch
   upstream: unknown
@@ -362,19 +366,17 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0037-arm64-dts-qcom-sm8750-add-CPU-thermal-cooling.patch`
   source: https://github.com/ROCKNIX/distribution/blob/b1e9d07b251c5a013d303a518106c547db001b74/projects/ROCKNIX/devices/SM8750/patches/linux/0075-arm64-dts-qcom-sm8750-add-CPU-thermal-cooling.patch
   upstream: unknown
+  notes: Linux 7.2 supplies the CPU cooling-cell properties; Armada retains the missing passive trips and cooling maps.
 - `patches/0049-drm-msm-a8xx-add-adreno-830-catalog.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0049-drm-msm-a8xx-add-adreno-830-catalog.patch
   upstream: unknown
 - `patches/0050-clk-qcom-gxclkctl-kaanapali-fix-gx-gdsc-collapse.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0050-clk-qcom-gxclkctl-kaanapali-fix-gx-gdsc-collapse.patch
   upstream: https://lore.kernel.org/r/20260427-gfx-clk-fixes-v2-2-797e54b3d464@oss.qualcomm.com
-- `patches/0051-drm-msm-a6xx-limit-gxpd-votes-to-recovery-in-a8x.patch`
-  source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0051-drm-msm-a6xx-limit-gxpd-votes-to-recovery-in-a8x.patch
-  upstream: https://lore.kernel.org/r/20260427-gfx-clk-fixes-v2-6-797e54b3d464@oss.qualcomm.com
 - `patches/0039-wifi-ath12k-add-initial-hardware-definition-for-WCN7.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0039-wifi-ath12k-add-initial-hardware-definition-for-WCN7.patch
   upstream: unknown
-  notes: Armada refreshed only the hardware-revision enum context for Linux 7.1's IPQ5424 entry; WCN7860 behavior is unchanged.
+  notes: Armada refreshed only the hardware-parameter insertion context for Linux 7.2's expanded IPQ5332 entry; WCN7860 behavior is unchanged.
 - `patches/0040-wifi-ath12k-send-QDSS-config-when-CNSS_QDSS_CFG_MISS.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0040-wifi-ath12k-send-QDSS-config-when-CNSS_QDSS_CFG_MISS.patch
   upstream: unknown
