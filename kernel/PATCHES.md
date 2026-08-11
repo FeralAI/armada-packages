@@ -222,6 +222,10 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0512-PCI-qcom-skip-L23-ready-poll-on-SM8550.patch`
   source: armada
   upstream: local
+- `patches/1031-revert-clk-regmap-phy-mux-rate-based-rework.patch`
+  source: armada
+  upstream: revert of https://github.com/torvalds/linux/commit/e108373c54fbc844b7f541c6fd7ecb31772afd3c
+  notes: Root-cause carry for the SM8550 wifi regression on Linux 7.2, hardware-validated on the Odin 2 Portal. The reverted commit (patch 1 of the "phy_fastclk" series) switched the PCIe pipe-clock mux from enable/disable ops to rate-based ops, but the series' consumer patches never merged, so nothing in 7.2-rc7 can switch the mux to the PHY source. Boards handed over with the mux parked on XO then run the QMP PHY bring-up on the wrong pipe clock and the WCN7850 link never leaves Detect. Restoring the enable-op contract restores the working 7.1 behavior. Drop when upstream lands the consumer side or reverts the rework.
 - `patches/0001-pcie-update-sm8550-dtsi.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0001-pcie-update-sm8550-dtsi.patch
   upstream: https://lore.kernel.org/r/20260611-wake-v2-33-2744251b1181@oss.qualcomm.com
