@@ -213,6 +213,10 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0505-msm_gem-lock-before-put_iova_spaces.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0505-msm_gem-lock-before-put_iova_spaces.patch
   upstream: unknown
+- `patches/0204-thermal-qcom-tsens-mask-lower-threshold-irqs-across-suspend.patch`
+  source: armada
+  upstream: local
+  notes: Lower threshold crossings during the suspend transition cannot be serviced while thermal zones are quiesced, so the level IRQ storms and aborts suspend; masking LOWER across the transition removes the cause and keeps upper/critical wake armed.
 - `patches/0510-soc-qcom-ice-unwind-clocks-on-resume-failure.patch`
   source: armada
   upstream: local

@@ -79,6 +79,7 @@
 v9_20260729_qualcomm_crypto_qce_runtime_pm_interconnect.patch
 0504-wakeup-qcom-ipcc-remove-IRQF-NO-SUSPEND.patch
 0505-msm_gem-lock-before-put_iova_spaces.patch
+0204-thermal-qcom-tsens-mask-lower-threshold-irqs-across-suspend.patch
 0510-soc-qcom-ice-unwind-clocks-on-resume-failure.patch
 0511-scsi-ufs-qcom-reenable-irq-on-host-reset-failure.patch
 0512-PCI-qcom-skip-L23-ready-poll-on-SM8550.patch
