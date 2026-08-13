@@ -1,12 +1,17 @@
 From: Armada <noreply@armada.local>
-Subject: [PATCH] arm64: dts: qcom: pocketds: drive the lower panel with ST7703
+Subject: [PATCH] arm64: dts: qcom: pocketds: ST7703 lower panel, expander rail supplies
 
 --- a/arch/arm64/boot/dts/qcom/qcs8550-ayaneo-pocketds.dts
 +++ b/arch/arm64/boot/dts/qcom/qcs8550-ayaneo-pocketds.dts
-@@ -39,6 +39,21 @@
+@@ -37,6 +37,25 @@
+ 		regulator-max-microvolt = <3300000>;
+ 		gpio = <&tca6408 1 GPIO_ACTIVE_HIGH>;
  		enable-active-high;
- 	};
-
++		/* pca953x suspend disables its own VCC; without the vin link
++		 * that cuts this rail while the GT911 still holds it enabled. */
++		vin-supply = <&tca6424_vcc>;
++	};
++
 +	/*
 +	 * The lower panel's ST7703 IOVCC rail is switched by an expander
 +	 * GPIO; the panel driver models it as a plain iovcc supply, so wrap
@@ -20,14 +25,13 @@ Subject: [PATCH] arm64: dts: qcom: pocketds: drive the lower panel with ST7703
 +		regulator-max-microvolt = <1800000>;
 +		gpio = <&tca6408 0 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
-+	};
-+
++		vin-supply = <&tca6424_vcc>;
+ 	};
+ 
  };
-
- &tlmm {
-@@ -219,13 +234,13 @@
+@@ -219,13 +238,13 @@
  	status = "okay";
-
+ 
  	panel@0 {
 -		compatible = "ayaneo,pocket-ds-secondary-panel";
 +		compatible = "ayaneo,pocket-ds-lower-panel";
