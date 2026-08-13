@@ -206,10 +206,13 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://lore.kernel.org/r/20260729110455.641256-1-kuldeep.singh@oss.qualcomm.com
   upstream: https://lore.kernel.org/r/20260729110455.641256-1-kuldeep.singh@oss.qualcomm.com
   notes: Refreshed only its include context for Linux 7.2; runtime-PM and interconnect behavior is unchanged.
-- `patches/0504-wakeup-qcom-ipcc-remove-IRQF-NO-SUSPEND.patch`
+- `patches/0504-mailbox-qcom-ipcc-mask-summary-irq-for-suspend-to-ram.patch`
   source: https://github.com/ROCKNIX/distribution/commit/f955f5b6137554253e4d52bbe72f9b4936fb253d
-  upstream: unknown
-  notes: Armada limits the SM8550/SM8750 workaround to their IPCC compatibles, preserving `IRQF_NO_SUSPEND` elsewhere.
+  upstream: not submitted
+  notes: Reworked from ROCKNIX's blanket IRQF_NO_SUSPEND removal: the summary
+  irq is masked (unlazy) only for suspend-to-RAM on the SM8550/SM8750
+  compatibles, so suspend-to-idle keeps the doorbell live and charging can
+  start while asleep.
 - `patches/0505-msm_gem-lock-before-put_iova_spaces.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0505-msm_gem-lock-before-put_iova_spaces.patch
   upstream: unknown
