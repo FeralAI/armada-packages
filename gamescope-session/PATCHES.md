@@ -22,3 +22,5 @@ to a commit, or `armada` if it is original; a URL source with no `notes` is verb
   source: armada
 - `patches/0009-add-drm-lease-functions.patch`
   source: armada
+- `patches/0010-armada-force-vulkan-realtime-option.patch`
+  source: armada
