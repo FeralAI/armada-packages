@@ -11,6 +11,7 @@ case "${pkg}" in
     extest)       cp extest/out/libextest.so ctx/ ;;
     lsfg-vk)      cp lsfg-vk/out/liblsfg-vk.so ctx/ ;;
     mesa-android) mkdir -p ctx/waydroid && cp -r mesa-android/out/vendor ctx/waydroid/ ;;
+    mesa-x86)     mkdir -p ctx/guestos-x86-mesa && cp -r mesa-x86/out/usr ctx/guestos-x86-mesa/ ;;
     kernel)       mkdir -p ctx/kernel && cp kernel/out/armada-kernel-*.tar.zst kernel/out/armada-kernel-*.tar.zst.sha256 ctx/kernel/ ;;
     armada-splash|fex|mesa|mangohud|gamescope|gamescope-session|kwin|powerdevil|inputplumber|networkmanager|jupiter-hw-support|umtp-responder) mkdir -p ctx/rpms && cp "${pkg}"/out/*.rpm ctx/rpms/ ;;
     *) echo "unknown package: ${pkg}" >&2; exit 1 ;;

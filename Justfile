@@ -8,7 +8,7 @@
 # unusably slow.
 
 registry := env("REGISTRY", "localhost/armada-packages")
-packages := "extest lsfg-vk armada-splash inputplumber fex mesa mesa-android mangohud gamescope gamescope-session kwin powerdevil networkmanager jupiter-hw-support umtp-responder kernel"
+packages := "extest lsfg-vk armada-splash inputplumber fex mesa mesa-android mesa-x86 mangohud gamescope gamescope-session kwin powerdevil networkmanager jupiter-hw-support umtp-responder kernel"
 
 import? 'Justfile.local'
 
@@ -27,11 +27,9 @@ image pkg: (artifacts pkg)
     #!/usr/bin/env bash
     set -euo pipefail
     bash scripts/stage.sh {{pkg}}
-    # mesa-android cross-builds on x86_64, so label its carrier for the target.
+    # mesa-android/mesa-x86 cross-build on x86_64, so label their carriers for the target.
     arch_flag=()
-    if [ "{{pkg}}" = "mesa-android" ]; then
-        arch_flag=(--arch arm64)
-    fi
+    case "{{pkg}}" in mesa-android|mesa-x86) arch_flag=(--arch arm64) ;; esac
     buildah build "${arch_flag[@]}" -f oci/Containerfile -t "{{registry}}/{{pkg}}:latest" .
     echo "==> {{registry}}/{{pkg}}:latest"
 

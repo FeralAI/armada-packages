@@ -1,0 +1,25 @@
+name: mesa-x86
+on:
+  push:
+    branches: [main]
+    paths: ['mesa-x86/**', 'mesa/patches/**', 'mesa/BASE.env', 'oci/**', '.github/workflows/mesa-x86.yml', '.github/workflows/_package-image.yml']
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build and publish as a matching container tag. Leave empty to use the workflow ref."
+        type: string
+        default: ""
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+jobs:
+  build:
+    uses: ./.github/workflows/_package-image.yml
+    secrets: inherit
+    with:
+      package: mesa-x86
+      branch: ${{ inputs.branch || '' }}
+      # x86_64 guest artifacts built natively on x86_64; the carrier targets arm64.
+      runner: ubuntu-24.04
+      image_arch: arm64
