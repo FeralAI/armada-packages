@@ -4,8 +4,6 @@ Patches applied on top of BASE.env. Each entry's `source` is an upstream URL pin
 to a commit, or `armada` if it's original; a URL source with no `notes` is verbatim.
 `notes` mean the file was modified.
 
-- `patches/0000-fix-Add-DRM-leasing-options-to-help-for-gamescope_has_option-checks.patch`
-  source: https://github.com/OpenGamingCollective/gamescope/commit/6dab6527a7d7c943bc9a2a4ae2355e876406f5b7
 - `patches/0001-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch`
   source: https://github.com/ROCKNIX/distribution/blob/e108ad2b8971b4e332d7457b75dd21dadb666d19/projects/ROCKNIX/packages/apps/gamescope/patches/0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch
 - `patches/0002-steamcompmgr-fallback-appid-focus.patch`
