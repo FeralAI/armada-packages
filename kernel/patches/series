@@ -36,6 +36,8 @@
 0053a-input-hynitron-port-to-gpiod.patch
 0053b-input-hynitron-restore-gpio-init-order.patch
 0054-input-goodix-override-resolution-from-dt.patch
+0054a-dt-bindings-input-goodix-document-input-device-label.patch
+0054b-input-goodix-allow-overriding-input-device-name.patch
 0029-Input-edt-ft5x06-add-no_regmap_bulk_read-option.patch
 0059_AYN-Odin2-Mini--hynitron--cstxxx.patch
 0060-input-touchscreen-add-synaptics-dsx-kconfig.patch

@@ -115,6 +115,14 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0054-input-goodix-override-resolution-from-dt.patch
   upstream: unknown
   notes: Armada replaced ROCKNIX's automatic resolution-mismatch heuristic and hardcoded fallback with explicit `goodix,native-size-x` and `goodix,native-size-y` properties. Scaling is dormant unless a device opts in with both native and standard touchscreen dimensions.
+- `patches/0054a-dt-bindings-input-goodix-document-input-device-label.patch`
+  source: armada
+  upstream: local
+  notes: Documents the optional Goodix `label` property used to name the input device.
+- `patches/0054b-input-goodix-allow-overriding-input-device-name.patch`
+  source: armada
+  upstream: local
+  notes: Allows the Pocket DS lower GT911 to expose its `bottom_touchscreen` label as the input device name.
 - `patches/0029-Input-edt-ft5x06-add-no_regmap_bulk_read-option.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0029-Input-edt-ft5x06-add-no_regmap_bulk_read-option.patch
   upstream: https://lore.kernel.org/r/20260723-b4-ft5426-v1-3-d4b4e32be042@gmail.com
@@ -520,7 +528,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pockets2k.dts`.
 - `dts/qcs8550-ayaneo-pocketds.dts.patch`
   source: armada
-  notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocketds.dts`. It moves the lower panel onto the ST7703 driver contract: `vcc-supply` for the SGM3804 charge pump, and the former `enable-gpio` on TCA6408 GPIO0 re-modeled as a fixed regulator consumed as `iovcc-supply`. It also declares `vin-supply = <&tca6424_vcc>` on both expander-switched fixed regulators (`vdd_ts`, `panel1-iovcc`): the pca953x suspend callback disables its own VCC, and without the vin link the regulator core would cut the expander while the GT911 still holds VDDIO enabled, aborting async deep suspend mid Goodix screen-off write.
+  notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocketds.dts`. It labels the lower GT911 input device as `bottom_touchscreen` and moves the lower panel onto the ST7703 driver contract: `vcc-supply` for the SGM3804 charge pump, and the former `enable-gpio` on TCA6408 GPIO0 re-modeled as a fixed regulator consumed as `iovcc-supply`. It also declares `vin-supply = <&tca6424_vcc>` on both expander-switched fixed regulators (`vdd_ts`, `panel1-iovcc`): the pca953x suspend callback disables its own VCC, and without the vin link the regulator core would cut the expander while the GT911 still holds VDDIO enabled, aborting async deep suspend mid Goodix screen-off write.
 - `dts/qcs8550-ayn-common.dtsi.patch`
   source: armada
   notes: Armada removes the SDHCI capability mask and marks the shared RSInput node as connected to the PM8550B haptics device declared in the same common tree. This intentionally covers the AYN and Retroid products that inherit both nodes, including Pocket 6 and Nova.
