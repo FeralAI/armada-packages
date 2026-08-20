@@ -60,8 +60,10 @@
 1001-haptics-driver-support-periodic-sine-and-fixes.patch
 1002-input-rsinput-sm8750-ff.patch
 1003-input-haptics-fix-rumble-bridge-atomic-sleep.patch
+1005-input-rsinput-quiesce-the-mcu-across-system-sleep.patch
 1004-input-haptics-stop-zero-amplitude-immediately.patch
 1300-input-rsinput-axis-deadzone.patch
+0515-input-rsinput-reassemble-uart-frames-instead-of-dropping-them.patch
 
 # ============== Audio ==============
 0059-ASoC-aw88395-lib-skip-monitor-sections-in-V1-ACF-parse.patch
@@ -85,10 +87,11 @@ v9_20260729_qualcomm_crypto_qce_runtime_pm_interconnect.patch
 0510-soc-qcom-ice-unwind-clocks-on-resume-failure.patch
 0511-scsi-ufs-qcom-reenable-irq-on-host-reset-failure.patch
 0512-PCI-qcom-skip-L23-ready-poll-on-SM8550.patch
-1031-revert-clk-regmap-phy-mux-rate-based-rework.patch
+0513-PCI-qcom-honour-an-opp-suspend-opp-as-the-non-s2ram-memory-floor.patch
 
 # ============== SM8550 DTSI prerequisites ==============
 0001-pcie-update-sm8550-dtsi.patch
+0520-arm64-dts-qcom-sm8550-add-a-pcie-suspend-opp.patch
 0120-20250728_konradybcio_gpu_cc_power_requirements_reality_check.patch
 0121-pmdomain-qcom-rpmhpd-presync-floor-gmu-rails.patch
 0122-interconnect__qcom__sm8550__Enable_QoS_configuration.patch
@@ -98,7 +101,6 @@ v9_20260729_qualcomm_crypto_qce_runtime_pm_interconnect.patch
 0500-ROCKNIX-set-boot-fanspeed.patch
 0501-ROCKNIX-fix-wifi-and-bt-mac.patch
 0503-ROCKNIX-battery-name.patch
-0900-power-supply-qcom-battmgr-log-usb-adapter-type.patch
 
 # ============== SM8650 (AYANEO Pocket S2, KONKR Pocket FIT) ==============
 0001-pcie-update-sm8650-dtsi.patch
@@ -158,3 +160,4 @@ v2_20260420_neil_armstrong_arm64_qcom_sm8650_misc_enhancements.patch
 0074-soundwire-qcom-PCM-data-port-format-enable.patch
 0612-ROCKNIX-odin3-q6apm-start-mi2s-port-at-prepare.patch
 0613-ASoC-q6apm-scope-prepare-start-to-MI2S.patch
+

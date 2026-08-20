@@ -148,6 +148,10 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0508-input-rsinput-add-pm-resume-to-reinit-mcu-after-suspend.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0508-input-rsinput-add-pm-resume-to-reinit-mcu-after-suspend.patch
   upstream: unknown
+- `patches/0515-input-rsinput-reassemble-uart-frames-instead-of-dropping-them.patch`
+  source: armada
+  upstream: not submitted
+  notes: serdev delivers arbitrary byte batches and the old parser dropped any batch that was not exactly one frame, visible as resume-correlated checksum mismatches on the rsinput gamepad devices.
 - `patches/0504-Enable-64-bit-processes-to-use-compat-input-syscalls.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0504-Enable-64-bit-processes-to-use-compat-input-syscalls.patch
   upstream: unknown
@@ -181,6 +185,10 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: armada
   upstream: local
   notes: The imported periodic-sine compatibility patch changed zero-amplitude updates to gain 1, then stopped the motor five seconds later. The configured brake pattern made that stop a distinct delayed tap. Zero-amplitude updates now erase immediately, a following playback request cannot restart stale motor state when no effect is loaded, and in-place gain updates balance their transient runtime-PM reference.
+- `patches/1005-input-rsinput-quiesce-the-mcu-across-system-sleep.patch`
+  source: https://github.com/shuuri-labs/pocknix-os/blob/d2544c1481b55e9dec18ff74a8751d4a67b351f8/kernel/sm8550/patches/20-sm8550/1004-input-rsinput-suspend-resume-gamepad-mcu.patch
+  upstream: local
+  notes: Carries only the suspend-side MCU quiesce from the source patch; the source's resume and pm_ops additions are omitted because this tree already has both and rsinput_init_commands() performs the full power-on itself.
 - `patches/1300-input-rsinput-axis-deadzone.patch`
   source: armada
   upstream: local
@@ -237,13 +245,17 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0512-PCI-qcom-skip-L23-ready-poll-on-SM8550.patch`
   source: armada
   upstream: local
-- `patches/1031-revert-clk-regmap-phy-mux-rate-based-rework.patch`
+- `patches/0513-PCI-qcom-honour-an-opp-suspend-opp-as-the-non-s2ram-memory-floor.patch`
   source: armada
-  upstream: revert of https://github.com/torvalds/linux/commit/e108373c54fbc844b7f541c6fd7ecb31772afd3c
-  notes: Root-cause carry for the SM8550 wifi regression on Linux 7.2, hardware-validated on the Odin 2 Portal. The reverted commit (patch 1 of the "phy_fastclk" series) switched the PCIe pipe-clock mux from enable/disable ops to rate-based ops, but the series' consumer patches never merged, so nothing in 7.2-rc7 can switch the mux to the PHY source. Boards handed over with the mux parked on XO then run the QMP PHY bring-up on the wrong pipe clock and the WCN7850 link never leaves Detect. Restoring the enable-op contract restores the working 7.1 behavior. Drop when upstream lands the consumer side or reverts the rework.
+  upstream: not submitted
+  notes: On OPP-scaling platforms the OPP carries the only PCIe memory-path votes, so dropping it to NULL on non-S2RAM suspend leaves the RPMh sleep set with no DDR/LLCC contract and the AOP never resumes. Deliberately does not populate `pcie->icc_mem` on OPP platforms: `qcom_pcie_icc_opp_update()` prefers an `icc_mem` handle over the OPP branch, so providing one silently disables the post-link-training OPP update and pins the OPP at the probe-time maximum.
 - `patches/0001-pcie-update-sm8550-dtsi.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8550/patches/linux/0001-pcie-update-sm8550-dtsi.patch
   upstream: https://lore.kernel.org/r/20260611-wake-v2-33-2744251b1181@oss.qualcomm.com
+- `patches/0520-arm64-dts-qcom-sm8550-add-a-pcie-suspend-opp.patch`
+  source: armada
+  upstream: not submitted
+  notes: Companion DT for 0513. `opp-hz` is synthetic and `opp-level` is omitted so the OPP can never be selected for a trained link by either match in `qcom_pcie_icc_opp_update()`. pcie1 is disabled in the SM8550 board DTS files that use this table and gets no suspend OPP.
 - `patches/0120-20250728_konradybcio_gpu_cc_power_requirements_reality_check.patch`
   source: https://github.com/ROCKNIX/distribution/blob/ef264a238d5e2ba960145e3fda663dc27de49a80/projects/ROCKNIX/devices/SM8550/patches/linux/0120-20250728_konradybcio_gpu_cc_power_requirements_reality_check.patch
   upstream: https://lore.kernel.org/r/20250728-topic-gpucc_power_plumbing-v1-22-09c2480fe3e6@oss.qualcomm.com
