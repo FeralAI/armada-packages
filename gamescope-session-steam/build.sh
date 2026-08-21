@@ -55,8 +55,12 @@ EOF
 
     {
       head -n "$((INSERT_LINE - 1))" "${SPEC}"
-      printf "Patch:         %s\n" "${PATCHES[@]}"
-      printf "\n"
+
+      if (( ${#PATCHES[@]} > 0 )); then
+        printf "Patch:         %s\n" "${PATCHES[@]}"
+        printf "\n"
+      fi
+
       tail -n "+${INSERT_LINE}" "${SPEC}"
     } >"${SPEC}.tmp"
 
