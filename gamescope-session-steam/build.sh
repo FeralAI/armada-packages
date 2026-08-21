@@ -36,8 +36,8 @@ EOF
 
     git checkout ${TERRA_COMMIT}
 
-    PKG=anda/games/gamescope-session
-    SPEC="${PKG}/gamescope-session.spec"
+    PKG=anda/games/gamescope-session-steam
+    SPEC="${PKG}/gamescope-session-steam.spec"
 
     mapfile -t PATCHES < <(
       find /work/patches \
@@ -49,7 +49,7 @@ EOF
     )
 
     INSERT_LINE="$(
-      grep -n -m1 "^BuildRequires:" "${SPEC}" |
+      grep -n -m1 "BuildArch:" "${SPEC}" |
         cut -d: -f1
     )"
 
@@ -73,9 +73,10 @@ EOF
     TIMESTAMP=$(TZ=UTC date +%m%d%H)
 
     sed -i \
-      -e "/^Release:/s/%?dist/.${TIMESTAMP}%{?dist}.armada/" \
+      -e "/^Release:/s/%{?dist}/.${TIMESTAMP}%{?dist}.armada/" \
       -e "/^%build$/i %global build_cflags %{build_cflags} ${ARMADA_MARCH}" \
       -e "/^%build$/i %global build_cxxflags %{build_cxxflags} ${ARMADA_MARCH}" \
+      -e "s/^Requires:       steam\>/#Requires:       steam/" \
       -e "s/^%autosetup\>/%autosetup -p1/" \
       "${SPEC}"
 
