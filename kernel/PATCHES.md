@@ -513,7 +513,7 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/linux/dts/qcom/sm8750-konkr-pf-elite.dts
 - `dts/sm8750-konkr-pf-elite.dts.patch`
   source: armada
-  notes: Armada adapts the Elite touchscreen node to the full ROCKNIX Chipone fork shared with the SM8650 Pocket FIT; the driver is selected only by those two device-tree nodes.
+  notes: Armada adapts the Elite touchscreen node to the full ROCKNIX Chipone fork shared with the SM8650 Pocket FIT and keeps volume-up from waking the system; the driver is selected only by those two device-tree nodes.
 - `dts/cq8725s-ayn-common.dtsi`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0046-arm64-dts-qcom-Add-AYN-CQ8725S-Common.patch
   notes: Armada extracted this DTS from the cited ROCKNIX patch and then applied later ROCKNIX DTS updates, including the Odin 3 haptics nodes from ROCKNIX commit `81a31e3d0f`.
@@ -525,10 +525,10 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   notes: Armada enables DPU dithering after copying `dts/cq8725s-ayn-odin3.dts`.
 - `dts/cq8725s-ayn-common.dtsi.patch`
   source: armada
-  notes: Armada marks Odin 3's RSInput node as connected to the Qualcomm haptics device and supplies the device's 1024 range and 70-count axis deadzone.
+  notes: Armada keeps volume-up from waking the system, marks Odin 3's RSInput node as connected to the Qualcomm haptics device, and supplies the device's 1024 range and 70-count axis deadzone.
 - `dts/qcs8550-ayaneo-pocket-common.dtsi.patch`
   source: armada
-  notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocket-common.dtsi`.
+  notes: Armada keeps volume-up from waking the system and removes the SDHCI capability mask after copying `dts/qcs8550-ayaneo-pocket-common.dtsi`.
 - `dts/qcs8550-ayaneo-pocketace.dts.patch`
   source: armada
   notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocketace.dts`.
@@ -541,18 +541,21 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `dts/qcs8550-ayaneo-pocketds.dts.patch`
   source: armada
   notes: Armada applies this local patch after copying `dts/qcs8550-ayaneo-pocketds.dts`. It labels the lower GT911 input device as `bottom_touchscreen` and moves the lower panel onto the ST7703 driver contract: `vcc-supply` for the SGM3804 charge pump, and the former `enable-gpio` on TCA6408 GPIO0 re-modeled as a fixed regulator consumed as `iovcc-supply`. It also declares `vin-supply = <&tca6424_vcc>` on both expander-switched fixed regulators (`vdd_ts`, `panel1-iovcc`): the pca953x suspend callback disables its own VCC, and without the vin link the regulator core would cut the expander while the GT911 still holds VDDIO enabled, aborting async deep suspend mid Goodix screen-off write.
+- `dts/qcs8550-ayaneo-pocketevo.dts.patch`
+  source: armada
+  notes: Armada keeps the AYA Space, Menu, LC, and RC auxiliary keys from waking the system.
 - `dts/qcs8550-ayn-common.dtsi.patch`
   source: armada
-  notes: Armada removes the SDHCI capability mask and marks the shared RSInput node as connected to the PM8550B haptics device declared in the same common tree. This intentionally covers the AYN and Retroid products that inherit both nodes, including Pocket 6 and Nova.
+  notes: Armada keeps volume-up from waking the system, removes the SDHCI capability mask, and marks the shared RSInput node as connected to the PM8550B haptics device declared in the same common tree. This intentionally covers the AYN and Retroid products that inherit both nodes, including Pocket 6 and Nova.
 - `dts/qcs8550-retroidpocket-rp6.dts.patch`
   source: armada
   notes: Armada switches Pocket 6 from ROCKNIX's Odin 2 fallback to audio firmware extracted from a Pocket 6 vendor image.
 - `dts/qcs8550-ayn-thor.dts.patch`
   source: armada
-  notes: Armada fixes the hall-sensor pinctrl and touch orientation after copying `dts/qcs8550-ayn-thor.dts`.
+  notes: Armada fixes the hall-sensor pinctrl, makes only the lid-open edge wake, and corrects touch orientation after copying `dts/qcs8550-ayn-thor.dts`.
 - `dts/sm8650-ayaneo-common.dtsi.patch`
   source: armada
-  notes: Armada applies this local patch after copying `dts/sm8650-ayaneo-common.dtsi`.
+  notes: Armada keeps volume-up from waking the system and wires the upstream SY7758 driver after copying `dts/sm8650-ayaneo-common.dtsi`.
 - `dts/sm8650-ayaneo-ps2.dts.patch`
   source: armada
   notes: Armada selects the accepted Pocket S2 WSA2 sound-card mapping after copying the ROCKNIX DTS.

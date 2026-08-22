@@ -1,9 +1,17 @@
 From: Armada <noreply@armada.local>
-Subject: [PATCH] arm64: dts: qcom: thor: fix the hall sensor and touch orientation
+Subject: [PATCH] arm64: dts: qcom: thor: fix hall wake and touch orientation
 
 --- a/arch/arm64/boot/dts/qcom/qcs8550-ayn-thor.dts
 +++ b/arch/arm64/boot/dts/qcom/qcs8550-ayn-thor.dts
-@@ -30,6 +30,8 @@
+@@ -5,6 +5,7 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/input/gpio-keys.h>
+ #include "qcs8550-ayn-common.dtsi"
+ 
+ / {
+@@ -30,13 +31,16 @@
  
  	gpio-keys-lid {
  		compatible = "gpio-keys";
@@ -12,7 +20,15 @@ Subject: [PATCH] arm64: dts: qcom: thor: fix the hall sensor and touch orientati
  
  		hall-lid-sensor {
  			label = "Hall Lid Sensor";
-@@ -275,8 +277,6 @@
+ 			gpios = <&tlmm 17 GPIO_ACTIVE_LOW>;
+ 			linux,input-type = <EV_SW>;
+ 			linux,code = <SW_LID>;
+ 			linux,can-disable;
++			wakeup-event-action = <EV_ACT_DEASSERTED>;
+ 			wakeup-source;
+ 		};
+ 	};
+@@ -275,8 +279,6 @@
  
  		touchscreen-size-x = <1080>;
  		touchscreen-size-y = <1920>;
@@ -21,7 +37,7 @@ Subject: [PATCH] arm64: dts: qcom: thor: fix the hall sensor and touch orientati
  
  		label = "top_touchscreen";
  	};
-@@ -393,8 +393,6 @@
+@@ -393,8 +395,6 @@
  
  		touchscreen-size-x = <1080>;
  		touchscreen-size-y = <1240>;
