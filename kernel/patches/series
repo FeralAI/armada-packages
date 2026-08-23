@@ -61,6 +61,7 @@
 1002-input-rsinput-sm8750-ff.patch
 1003-input-haptics-fix-rumble-bridge-atomic-sleep.patch
 1005-input-rsinput-quiesce-the-mcu-across-system-sleep.patch
+1006-tty-serial-qcom-geni-mask-non-console-irq-on-suspend.patch
 1004-input-haptics-stop-zero-amplitude-immediately.patch
 1300-input-rsinput-axis-deadzone.patch
 0515-input-rsinput-reassemble-uart-frames-instead-of-dropping-them.patch
@@ -160,4 +161,3 @@ v2_20260420_neil_armstrong_arm64_qcom_sm8650_misc_enhancements.patch
 0074-soundwire-qcom-PCM-data-port-format-enable.patch
 0612-ROCKNIX-odin3-q6apm-start-mi2s-port-at-prepare.patch
 0613-ASoC-q6apm-scope-prepare-start-to-MI2S.patch
-

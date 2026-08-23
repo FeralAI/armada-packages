@@ -189,6 +189,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/shuuri-labs/pocknix-os/blob/d2544c1481b55e9dec18ff74a8751d4a67b351f8/kernel/sm8550/patches/20-sm8550/1004-input-rsinput-suspend-resume-gamepad-mcu.patch
   upstream: local
   notes: Carries only the suspend-side MCU quiesce from the source patch; the source's resume and pm_ops additions are omitted because this tree already has both and rsinput_init_commands() performs the full power-on itself.
+- `patches/1006-tty-serial-qcom-geni-mask-non-console-irq-on-suspend.patch`
+  source: https://github.com/thorch-os/thorch/blob/2614a262d7de3f31bd47a0c92981461146663847/packages/linux-thorch/patches/0010-tty-serial-qcom-geni-mask-non-console-irq-on-suspend.patch
+  upstream: unknown
 - `patches/1300-input-rsinput-axis-deadzone.patch`
   source: armada
   upstream: local
