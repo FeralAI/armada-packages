@@ -90,6 +90,9 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
 - `patches/0062-backlight-aw99706-honor-blank-power-state.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8750/patches/linux/0062-backlight-aw99706-honor-blank-power-state.patch
   upstream: unknown
+- `patches/0065-backlight-aw99706-use-dt-binding-property-names.patch`
+  source: https://github.com/mrdidit/distribution/blob/b14788a72b7399f03aad2cdcced2e3b91ae15810/projects/ROCKNIX/devices/SM8750/patches/linux/0065-backlight-aw99706-use-dt-binding-property-names.patch
+  upstream: unknown
 - `patches/0015-touchscreen-edt-ft5x06-allow-to-override-input-name.patch`
   source: https://github.com/ROCKNIX/distribution/blob/bcf3b5bc574990b96543484575b06f912153a715/projects/ROCKNIX/devices/SM8250/patches/linux/0015-touchscreen-edt-ft5x06-allow-to-override-input-name.patch
   upstream: https://lore.kernel.org/r/20260409-ft5x06-label-v1-1-21e8a9ae9a60@gmail.com
