@@ -1,0 +1,60 @@
+//! Command line interface for stick lighting.
+
+use anyhow::Result;
+use armada_stick_lighting::{Controller, LightingConfig};
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(version, about)]
+struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Show the saved lighting configuration.
+    Get,
+    /// Set a solid color and brightness.
+    Set {
+        #[arg(long)]
+        color: String,
+        #[arg(long)]
+        brightness: u8,
+    },
+    /// Turn the stick lights off and save that state.
+    Off,
+    /// Apply the saved configuration.
+    Apply,
+}
+
+fn main() -> Result<()> {
+    let cli: Cli = Cli::parse();
+    let controller: Controller = Controller::from_env();
+
+    match cli.command {
+        Command::Get => {
+            let config: LightingConfig = controller.get()?;
+            println!("{}", serde_json::to_string_pretty(&config)?);
+        }
+        Command::Set { color, brightness } => {
+            let config: LightingConfig = controller.set(LightingConfig {
+                enabled: true,
+                color,
+                brightness,
+                ..LightingConfig::default()
+            })?;
+            println!("{}", serde_json::to_string_pretty(&config)?);
+        }
+        Command::Off => {
+            let config: LightingConfig = controller.off()?;
+            println!("{}", serde_json::to_string_pretty(&config)?);
+        }
+        Command::Apply => {
+            if let Some(reason) = controller.apply()? {
+                eprintln!("stick lighting unsupported: {reason}");
+            }
+        }
+    }
+    Ok(())
+}
