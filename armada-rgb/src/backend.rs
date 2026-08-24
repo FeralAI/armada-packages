@@ -1,4 +1,4 @@
-//! Hardware backends for stick lighting.
+//! Hardware backends for RGB lighting.
 
 use crate::LightingConfig;
 use anyhow::{bail, Context, Result};
@@ -190,7 +190,7 @@ fn validate_names(targets: &[String]) -> Result<()> {
     let mut seen: HashSet<&String> = HashSet::new();
 
     if targets.is_empty() {
-        bail!("stick-lighting target list is empty");
+        bail!("RGB target list is empty");
     }
     for target in targets {
         let valid: bool = !target.is_empty()

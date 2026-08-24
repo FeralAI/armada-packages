@@ -1,4 +1,4 @@
-use armada_stick_lighting::{Controller, LightingBackend, LightingConfig, MulticolorBackend};
+use armada_rgb::{Controller, LightingBackend, LightingConfig, MulticolorBackend};
 use std::fs;
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::path::PathBuf;
@@ -21,7 +21,7 @@ impl Fixture {
             .unwrap()
             .as_nanos();
         let root: PathBuf = std::env::temp_dir().join(format!(
-            "stick-lighting-test-{}-{nonce}-{}",
+            "rgb-test-{}-{nonce}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
@@ -29,7 +29,7 @@ impl Fixture {
         fs::create_dir_all(&leds).unwrap();
 
         Self {
-            config: root.join("etc/stick-lighting.json"),
+            config: root.join("etc/rgb.json"),
             leds,
             root,
         }
@@ -192,14 +192,14 @@ fn unsupported_devices_are_ignored_during_boot() {
 fn cli_sets_gets_and_turns_off() {
     let fixture: Fixture = Fixture::new();
     fixture.target("rgb:l1", "blue green red", "255");
-    let binary: &str = env!("CARGO_BIN_EXE_armada-stick-lighting");
+    let binary: &str = env!("CARGO_BIN_EXE_armada-rgb");
     let run = |args: &[&str]| {
         Command::new(binary)
             .args(args)
-            .env("ARMADA_STICK_LIGHTING_CONFIG_PATH", &fixture.config)
-            .env("ARMADA_STICK_LIGHTING_SYSFS_ROOT", &fixture.leds)
-            .env("ARMADA_STICK_LIGHTING_BACKEND", "multicolor")
-            .env("ARMADA_STICK_LIGHTING_TARGETS", "rgb:l1")
+            .env("ARMADA_RGB_CONFIG_PATH", &fixture.config)
+            .env("ARMADA_RGB_SYSFS_ROOT", &fixture.leds)
+            .env("ARMADA_RGB_BACKEND", "multicolor")
+            .env("ARMADA_RGB_TARGETS", "rgb:l1")
             .output()
             .unwrap()
     };

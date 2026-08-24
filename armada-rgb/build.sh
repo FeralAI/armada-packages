@@ -22,7 +22,7 @@ podman run --rm \
 %vendor Armada
 EOF
 
-    NAME=armada-stick-lighting
+    NAME=armada-rgb
 
     dnf -y install --skip-unavailable \
       rpm-build rpmdevtools dnf-plugins-core \

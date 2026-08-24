@@ -9,11 +9,10 @@ pub(crate) fn load(path: &Path) -> Result<LightingConfig> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             return Ok(LightingConfig::default())
         }
-        Err(error) => return Err(error).context("read stick-lighting config"),
+        Err(error) => return Err(error).context("read RGB config"),
     };
 
-    let config: LightingConfig =
-        serde_json::from_str(&input).context("parse stick-lighting config")?;
+    let config: LightingConfig = serde_json::from_str(&input).context("parse RGB config")?;
     config.validate()
 }
 
@@ -24,6 +23,6 @@ pub(crate) fn save(path: &Path, config: &LightingConfig) -> Result<()> {
     contents.push(b'\n');
 
     fs::create_dir_all(directory).context("create config directory")?;
-    fs::write(&temporary, contents).context("write temporary stick-lighting config")?;
-    fs::rename(temporary, path).context("replace stick-lighting config")
+    fs::write(&temporary, contents).context("write temporary RGB config")?;
+    fs::rename(temporary, path).context("replace RGB config")
 }

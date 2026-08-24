@@ -1,7 +1,7 @@
-//! Command line interface for stick lighting.
+//! Command line interface for RGB lighting.
 
 use anyhow::Result;
-use armada_stick_lighting::{Controller, LightingConfig};
+use armada_rgb::{Controller, LightingConfig};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -52,7 +52,7 @@ fn main() -> Result<()> {
         }
         Command::Apply => {
             if let Some(reason) = controller.apply()? {
-                eprintln!("stick lighting unsupported: {reason}");
+                eprintln!("RGB unsupported: {reason}");
             }
         }
     }

@@ -5,23 +5,23 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const CONFIG_PATH: &str = "/etc/armada/stick-lighting.json";
+const CONFIG_PATH: &str = "/etc/armada/rgb.json";
 const SYSFS_ROOT: &str = "/sys/class/leds";
 const DEVICE_ENV: &str = "/usr/libexec/armada/device-env";
 
 pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
-    let config_path: PathBuf = env::var_os("ARMADA_STICK_LIGHTING_CONFIG_PATH")
+    let config_path: PathBuf = env::var_os("ARMADA_RGB_CONFIG_PATH")
         .map(PathBuf::from)
         .unwrap_or_else(|| CONFIG_PATH.into());
-    let sysfs_root: PathBuf = env::var_os("ARMADA_STICK_LIGHTING_SYSFS_ROOT")
+    let sysfs_root: PathBuf = env::var_os("ARMADA_RGB_SYSFS_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| SYSFS_ROOT.into());
-    let device_env: PathBuf = env::var_os("ARMADA_STICK_LIGHTING_DEVICE_ENV")
+    let device_env: PathBuf = env::var_os("ARMADA_RGB_DEVICE_ENV")
         .or_else(|| env::var_os("ARMADA_DEVICE_ENV"))
         .map(PathBuf::from)
         .unwrap_or_else(|| DEVICE_ENV.into());
-    let backend_override: Option<String> = env::var("ARMADA_STICK_LIGHTING_BACKEND").ok();
-    let targets_override: Option<String> = env::var("ARMADA_STICK_LIGHTING_TARGETS").ok();
+    let backend_override: Option<String> = env::var("ARMADA_RGB_BACKEND").ok();
+    let targets_override: Option<String> = env::var("ARMADA_RGB_TARGETS").ok();
 
     let helper: Result<HashMap<String, String>> =
         if backend_override.is_some() && targets_override.is_some() {
@@ -34,10 +34,10 @@ pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
         Err(error) => (HashMap::new(), Some(format!("{error:#}"))),
     };
     let backend_name: String = backend_override
-        .or_else(|| values.get("ARMADA_STICK_LIGHTING_BACKEND").cloned())
+        .or_else(|| values.get("ARMADA_RGB_BACKEND").cloned())
         .unwrap_or_default();
     let target_names: String = targets_override
-        .or_else(|| values.get("ARMADA_STICK_LIGHTING_TARGETS").cloned())
+        .or_else(|| values.get("ARMADA_RGB_TARGETS").cloned())
         .unwrap_or_default();
     let targets: Vec<String> = target_names.split_whitespace().map(str::to_owned).collect();
 
@@ -45,15 +45,11 @@ pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
         "multicolor" if !targets.is_empty() => {
             LightingBackend::Multicolor(MulticolorBackend::new(sysfs_root, targets))
         }
-        "multicolor" => {
-            LightingBackend::Unsupported("device profile has no stick-lighting targets".into())
-        }
+        "multicolor" => LightingBackend::Unsupported("device profile has no RGB targets".into()),
         "" => LightingBackend::Unsupported(
-            helper_error.unwrap_or_else(|| "device profile has no stick-lighting backend".into()),
+            helper_error.unwrap_or_else(|| "device profile has no RGB backend".into()),
         ),
-        backend => {
-            LightingBackend::Unsupported(format!("unsupported stick-lighting backend '{backend}'"))
-        }
+        backend => LightingBackend::Unsupported(format!("unsupported RGB backend '{backend}'")),
     };
 
     (config_path, backend)
@@ -73,10 +69,7 @@ fn read_device_env(path: &Path) -> Result<HashMap<String, String>> {
 }
 
 fn parse_device_env(output: &str) -> Result<HashMap<String, String>> {
-    const WANTED: [&str; 2] = [
-        "ARMADA_STICK_LIGHTING_BACKEND",
-        "ARMADA_STICK_LIGHTING_TARGETS",
-    ];
+    const WANTED: [&str; 2] = ["ARMADA_RGB_BACKEND", "ARMADA_RGB_TARGETS"];
     let mut values: HashMap<String, String> = HashMap::new();
 
     for line in output.lines() {
@@ -118,11 +111,10 @@ mod tests {
 
     #[test]
     fn parses_device_env_output() {
-        let values: HashMap<String, String> = parse_device_env(
-            "ARMADA_STICK_LIGHTING_BACKEND=multicolor\nARMADA_STICK_LIGHTING_TARGETS=rgb:l1\\ rgb:r1\n",
-        )
-        .unwrap();
-        assert_eq!(values["ARMADA_STICK_LIGHTING_BACKEND"], "multicolor");
-        assert_eq!(values["ARMADA_STICK_LIGHTING_TARGETS"], "rgb:l1 rgb:r1");
+        let values: HashMap<String, String> =
+            parse_device_env("ARMADA_RGB_BACKEND=multicolor\nARMADA_RGB_TARGETS=rgb:l1\\ rgb:r1\n")
+                .unwrap();
+        assert_eq!(values["ARMADA_RGB_BACKEND"], "multicolor");
+        assert_eq!(values["ARMADA_RGB_TARGETS"], "rgb:l1 rgb:r1");
     }
 }

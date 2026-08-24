@@ -1,4 +1,4 @@
-//! Stick lighting support for Armada devices.
+//! RGB lighting support for Armada devices.
 
 mod backend;
 mod config;

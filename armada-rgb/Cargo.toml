@@ -1,9 +1,9 @@
 [package]
-name = "armada-stick-lighting"
+name = "armada-rgb"
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
-description = "Stick lighting controller for Armada"
+description = "RGB lighting controller for Armada"
 
 [dependencies]
 anyhow = "1.0.104"
@@ -15,4 +15,3 @@ serde_json = "1.0.151"
 lto = "thin"
 panic = "abort"
 strip = true
-

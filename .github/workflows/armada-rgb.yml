@@ -1,8 +1,8 @@
-name: armada-stick-lighting
+name: armada-rgb
 on:
   push:
     branches: [main]
-    paths: ['armada-stick-lighting/**', 'oci/**', '.github/workflows/armada-stick-lighting.yml', '.github/workflows/_package-image.yml', 'toolchain.env']
+    paths: ['armada-rgb/**', 'oci/**', '.github/workflows/armada-rgb.yml', '.github/workflows/_package-image.yml', 'toolchain.env']
   workflow_dispatch:
     inputs:
       branch:
@@ -18,5 +18,5 @@ jobs:
     uses: ./.github/workflows/_package-image.yml
     secrets: inherit
     with:
-      package: armada-stick-lighting
+      package: armada-rgb
       branch: ${{ inputs.branch || '' }}
