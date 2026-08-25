@@ -1,4 +1,4 @@
-use crate::{LightingBackend, MulticolorBackend};
+use crate::{ChannelBackend, LightingBackend, MulticolorBackend};
 use anyhow::{bail, Context, Result};
 use std::collections::HashMap;
 use std::env;
@@ -42,6 +42,10 @@ pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
     let targets: Vec<String> = target_names.split_whitespace().map(str::to_owned).collect();
 
     let backend: LightingBackend = match backend_name.as_str() {
+        "channels" if !targets.is_empty() => {
+            LightingBackend::Channels(ChannelBackend::new(sysfs_root, targets))
+        }
+        "channels" => LightingBackend::Unsupported("device profile has no RGB targets".into()),
         "multicolor" if !targets.is_empty() => {
             LightingBackend::Multicolor(MulticolorBackend::new(sysfs_root, targets))
         }
@@ -111,10 +115,11 @@ mod tests {
 
     #[test]
     fn parses_device_env_output() {
-        let values: HashMap<String, String> =
-            parse_device_env("ARMADA_RGB_BACKEND=multicolor\nARMADA_RGB_TARGETS=rgb:l1\\ rgb:r1\n")
-                .unwrap();
-        assert_eq!(values["ARMADA_RGB_BACKEND"], "multicolor");
-        assert_eq!(values["ARMADA_RGB_TARGETS"], "rgb:l1 rgb:r1");
+        let values: HashMap<String, String> = parse_device_env(
+            "ARMADA_RGB_BACKEND=channels\nARMADA_RGB_TARGETS=red=l:r1\\ green=l:g1\n",
+        )
+        .unwrap();
+        assert_eq!(values["ARMADA_RGB_BACKEND"], "channels");
+        assert_eq!(values["ARMADA_RGB_TARGETS"], "red=l:r1 green=l:g1");
     }
 }
