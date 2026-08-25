@@ -45,10 +45,6 @@ impl MulticolorBackend {
             return blank(&mut targets);
         }
 
-        if let Err(error) = blank(&mut targets) {
-            blank_best_effort(&mut targets);
-            return Err(error);
-        }
         if let Err(error) = write_colors(&mut targets) {
             blank_best_effort(&mut targets);
             return Err(error);
