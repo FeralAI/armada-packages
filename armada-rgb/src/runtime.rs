@@ -1,4 +1,4 @@
-use crate::{ChannelBackend, LightingBackend, MulticolorBackend};
+use crate::{ChannelBackend, ColorCorrection, LightingBackend, MulticolorBackend};
 use anyhow::{bail, Context, Result};
 use std::collections::HashMap;
 use std::env;
@@ -22,6 +22,7 @@ pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
         .unwrap_or_else(|| DEVICE_ENV.into());
     let backend_override: Option<String> = env::var("ARMADA_RGB_BACKEND").ok();
     let targets_override: Option<String> = env::var("ARMADA_RGB_TARGETS").ok();
+    let correction_override: Option<String> = env::var("ARMADA_RGB_CORRECTION").ok();
 
     let helper: Result<HashMap<String, String>> =
         if backend_override.is_some() && targets_override.is_some() {
@@ -40,15 +41,28 @@ pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
         .or_else(|| values.get("ARMADA_RGB_TARGETS").cloned())
         .unwrap_or_default();
     let targets: Vec<String> = target_names.split_whitespace().map(str::to_owned).collect();
+    let correction: Option<ColorCorrection> = match correction_override
+        .or_else(|| values.get("ARMADA_RGB_CORRECTION").cloned())
+        .map(|value| value.parse())
+        .transpose()
+    {
+        Ok(correction) => correction,
+        Err(error) => {
+            return (
+                config_path,
+                LightingBackend::Unsupported(format!("{error:#}")),
+            )
+        }
+    };
 
     let backend: LightingBackend = match backend_name.as_str() {
-        "channels" if !targets.is_empty() => {
-            LightingBackend::Channels(ChannelBackend::new(sysfs_root, targets))
-        }
+        "channels" if !targets.is_empty() => LightingBackend::Channels(
+            ChannelBackend::new(sysfs_root, targets).with_correction(correction),
+        ),
         "channels" => LightingBackend::Unsupported("device profile has no RGB targets".into()),
-        "multicolor" if !targets.is_empty() => {
-            LightingBackend::Multicolor(MulticolorBackend::new(sysfs_root, targets))
-        }
+        "multicolor" if !targets.is_empty() => LightingBackend::Multicolor(
+            MulticolorBackend::new(sysfs_root, targets).with_correction(correction),
+        ),
         "multicolor" => LightingBackend::Unsupported("device profile has no RGB targets".into()),
         "" => LightingBackend::Unsupported(
             helper_error.unwrap_or_else(|| "device profile has no RGB backend".into()),
@@ -73,7 +87,11 @@ fn read_device_env(path: &Path) -> Result<HashMap<String, String>> {
 }
 
 fn parse_device_env(output: &str) -> Result<HashMap<String, String>> {
-    const WANTED: [&str; 2] = ["ARMADA_RGB_BACKEND", "ARMADA_RGB_TARGETS"];
+    const WANTED: [&str; 3] = [
+        "ARMADA_RGB_BACKEND",
+        "ARMADA_RGB_TARGETS",
+        "ARMADA_RGB_CORRECTION",
+    ];
     let mut values: HashMap<String, String> = HashMap::new();
 
     for line in output.lines() {
@@ -116,10 +134,11 @@ mod tests {
     #[test]
     fn parses_device_env_output() {
         let values: HashMap<String, String> = parse_device_env(
-            "ARMADA_RGB_BACKEND=channels\nARMADA_RGB_TARGETS=red=l:r1\\ green=l:g1\n",
+            "ARMADA_RGB_BACKEND=channels\nARMADA_RGB_TARGETS=red=l:r1\\ green=l:g1\nARMADA_RGB_CORRECTION=red:0\\,20\\,20\n",
         )
         .unwrap();
         assert_eq!(values["ARMADA_RGB_BACKEND"], "channels");
         assert_eq!(values["ARMADA_RGB_TARGETS"], "red=l:r1 green=l:g1");
+        assert_eq!(values["ARMADA_RGB_CORRECTION"], "red:0,20,20");
     }
 }

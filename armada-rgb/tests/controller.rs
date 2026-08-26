@@ -79,6 +79,7 @@ fn enabled(color: &str, brightness: u8) -> LightingConfig {
         enabled: true,
         brightness,
         color: color.into(),
+        correction: None,
     }
 }
 
@@ -171,13 +172,51 @@ fn cli_supports_channel_backend() {
         .env("ARMADA_RGB_SYSFS_ROOT", &fixture.leds)
         .env("ARMADA_RGB_BACKEND", "channels")
         .env("ARMADA_RGB_TARGETS", "red=l:r1 green=l:g1 blue=l:b1")
+        .env("ARMADA_RGB_CORRECTION", "always:0,20,20")
         .output()
         .unwrap();
 
     assert!(output.status.success());
     assert_eq!(fixture.value("l:r1", "brightness"), "0");
-    assert_eq!(fixture.value("l:g1", "brightness"), "255");
-    assert_eq!(fixture.value("l:b1", "brightness"), "255");
+    assert_eq!(fixture.value("l:g1", "brightness"), "154");
+    assert_eq!(fixture.value("l:b1", "brightness"), "154");
+}
+
+#[test]
+fn correction_preserves_the_user_color() {
+    let fixture: Fixture = Fixture::new();
+    fixture.target("rgb:sticks", "red green blue", "255");
+    let binary: &str = env!("CARGO_BIN_EXE_armada-rgb");
+    let run = |color: &str, correction: Option<&str>| {
+        let mut command: Command = Command::new(binary);
+        command
+            .args(["set", "--color", color, "--brightness", "100"])
+            .env("ARMADA_RGB_CONFIG_PATH", &fixture.config)
+            .env("ARMADA_RGB_SYSFS_ROOT", &fixture.leds)
+            .env("ARMADA_RGB_BACKEND", "multicolor")
+            .env("ARMADA_RGB_TARGETS", "rgb:sticks")
+            .env("ARMADA_RGB_CORRECTION", "red:0,20,20");
+        if let Some(correction) = correction {
+            command.args(["--correction", correction]);
+        }
+        command.output().unwrap()
+    };
+
+    let output: std::process::Output = run("FFFF00", None);
+    let config: LightingConfig = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(output.status.success());
+    assert_eq!(config.color, "FFFF00");
+    assert_eq!(config.correction.unwrap().green, 20);
+    assert_eq!(fixture.value("rgb:sticks", "multi_intensity"), "255 154 0");
+
+    let output: std::process::Output = run("00FFFF", Some("red:10,30,40"));
+    assert!(output.status.success());
+    assert_eq!(fixture.value("rgb:sticks", "multi_intensity"), "0 255 255");
+
+    let output: std::process::Output = run("FFFFFF", None);
+    let config: LightingConfig = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(output.status.success());
+    assert_eq!(config.correction.unwrap().green, 30);
 }
 
 #[test]

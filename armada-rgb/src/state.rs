@@ -1,3 +1,4 @@
+use crate::ColorCorrection;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +11,8 @@ pub struct LightingConfig {
     pub enabled: bool,
     pub brightness: u8,
     pub color: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub correction: Option<ColorCorrection>,
 }
 
 impl Default for LightingConfig {
@@ -19,6 +22,7 @@ impl Default for LightingConfig {
             enabled: false,
             brightness: 25,
             color: "FFFFFF".into(),
+            correction: None,
         }
     }
 }
@@ -33,6 +37,9 @@ impl LightingConfig {
         }
         if self.color.len() != 6 || !self.color.bytes().all(|c| c.is_ascii_hexdigit()) {
             bail!("color must be six hexadecimal RGB digits");
+        }
+        if let Some(correction) = &self.correction {
+            correction.validate()?;
         }
 
         self.color.make_ascii_uppercase();
@@ -53,6 +60,12 @@ mod tests {
 
     #[test]
     fn validates_and_normalizes_config() {
+        let old_config: LightingConfig = serde_json::from_str(
+            r#"{"version":1,"enabled":true,"brightness":25,"color":"FFFFFF"}"#,
+        )
+        .unwrap();
+        assert!(old_config.correction.is_none());
+
         let config: LightingConfig = LightingConfig {
             color: "a1b2c3".into(),
             ..LightingConfig::default()

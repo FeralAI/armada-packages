@@ -1,6 +1,6 @@
 //! Hardware backends for RGB lighting.
 
-use crate::LightingConfig;
+use crate::{ColorCorrection, LightingConfig};
 use anyhow::{bail, Context, Result};
 use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
@@ -28,16 +28,34 @@ impl LightingBackend {
             Self::Unsupported(reason) => Some(reason),
         }
     }
+
+    pub(crate) fn default_correction(&self) -> Option<ColorCorrection> {
+        match self {
+            Self::Channels(backend) => backend.correction.clone(),
+            Self::Multicolor(backend) => backend.correction.clone(),
+            Self::Unsupported(_) => None,
+        }
+    }
 }
 
 pub struct ChannelBackend {
     root: PathBuf,
     targets: Vec<String>,
+    correction: Option<ColorCorrection>,
 }
 
 impl ChannelBackend {
     pub fn new(root: PathBuf, targets: Vec<String>) -> Self {
-        Self { root, targets }
+        Self {
+            root,
+            targets,
+            correction: None,
+        }
+    }
+
+    pub(crate) fn with_correction(mut self, correction: Option<ColorCorrection>) -> Self {
+        self.correction = correction;
+        self
     }
 
     fn apply(&self, config: &LightingConfig) -> Result<()> {
@@ -51,7 +69,7 @@ impl ChannelBackend {
     }
 
     fn prepare(&self, config: &LightingConfig) -> Result<Vec<PreparedChannel>> {
-        let [red, green, blue]: [u8; 3] = config.rgb();
+        let [red, green, blue]: [u8; 3] = corrected_rgb(config, self.correction.as_ref());
         let mut channels: Vec<(String, u8)> = Vec::new();
 
         for target in &self.targets {
@@ -100,11 +118,21 @@ impl ChannelBackend {
 pub struct MulticolorBackend {
     root: PathBuf,
     targets: Vec<String>,
+    correction: Option<ColorCorrection>,
 }
 
 impl MulticolorBackend {
     pub fn new(root: PathBuf, targets: Vec<String>) -> Self {
-        Self { root, targets }
+        Self {
+            root,
+            targets,
+            correction: None,
+        }
+    }
+
+    pub(crate) fn with_correction(mut self, correction: Option<ColorCorrection>) -> Self {
+        self.correction = correction;
+        self
     }
 
     fn apply(&self, config: &LightingConfig) -> Result<()> {
@@ -128,7 +156,7 @@ impl MulticolorBackend {
     fn prepare(&self, config: &LightingConfig) -> Result<Vec<PreparedTarget>> {
         validate_names(&self.targets)?;
         let mut targets: Vec<PreparedTarget> = Vec::new();
-        let rgb: [u8; 3] = config.rgb();
+        let rgb: [u8; 3] = corrected_rgb(config, self.correction.as_ref());
 
         for name in &self.targets {
             let path: PathBuf = self.root.join(name);
@@ -302,6 +330,15 @@ fn channel_value(channel: &str, [red, green, blue]: [u8; 3], maximum: u32) -> u3
         "blue" => gamma(blue, maximum),
         _ => unreachable!("validated channel"),
     }
+}
+
+fn corrected_rgb(config: &LightingConfig, profile: Option<&ColorCorrection>) -> [u8; 3] {
+    let rgb: [u8; 3] = config.rgb();
+    let correction: Option<&ColorCorrection> = config.correction.as_ref().or(profile);
+    let Some(correction) = correction else {
+        return rgb;
+    };
+    correction.apply(rgb)
 }
 
 fn gamma(channel: u8, maximum: u32) -> u32 {

@@ -21,11 +21,18 @@ impl Controller {
     }
 
     pub fn get(&self) -> Result<LightingConfig> {
-        config::load(&self.config_path)
+        let mut config: LightingConfig = config::load(&self.config_path)?;
+        if config.correction.is_none() {
+            config.correction = self.backend.default_correction();
+        }
+        Ok(config)
     }
 
     pub fn set(&self, config: LightingConfig) -> Result<LightingConfig> {
-        let config: LightingConfig = config.validate()?;
+        let mut config: LightingConfig = config.validate()?;
+        if config.correction.is_none() {
+            config.correction = self.backend.default_correction();
+        }
         self.backend.apply(&config)?;
         config::save(&self.config_path, &config)?;
         Ok(config)

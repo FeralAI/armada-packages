@@ -18,3 +18,7 @@ Settings are saved to `/etc/armada/rgb.json` after the hardware was
 updated successfully. Only LED names declared by the device profile are used.
 Profiles using the `channels` backend provide explicit target mappings such as
 `red=l:r1 green=l:g1 blue=l:b1`.
+
+Profiles can provide conditional channel reductions with
+`ARMADA_RGB_CORRECTION=red:0,20,20`. The values are red, green, and blue
+percentages and can be changed with `armada-rgb set --correction`.
