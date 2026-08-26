@@ -43,6 +43,7 @@ pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
     let targets: Vec<String> = target_names.split_whitespace().map(str::to_owned).collect();
     let correction: Option<ColorCorrection> = match correction_override
         .or_else(|| values.get("ARMADA_RGB_CORRECTION").cloned())
+        .filter(|value| !value.is_empty())
         .map(|value| value.parse())
         .transpose()
     {
