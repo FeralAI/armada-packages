@@ -1,7 +1,7 @@
 //! Command line interface for RGB lighting.
 
 use anyhow::Result;
-use armada_rgb::{Controller, LightingConfig};
+use armada_rgb::{ColorCorrection, Controller, LightingConfig};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -21,6 +21,9 @@ enum Command {
         color: String,
         #[arg(long)]
         brightness: u8,
+        /// RGB correction trigger and channel reductions.
+        #[arg(long, value_name = "TRIGGER:RED,GREEN,BLUE")]
+        correction: Option<ColorCorrection>,
     },
     /// Turn the stick lights off and save that state.
     Off,
@@ -37,13 +40,19 @@ fn main() -> Result<()> {
             let config: LightingConfig = controller.get()?;
             println!("{}", serde_json::to_string_pretty(&config)?);
         }
-        Command::Set { color, brightness } => {
-            let config: LightingConfig = controller.set(LightingConfig {
-                enabled: true,
-                color,
-                brightness,
-                ..LightingConfig::default()
-            })?;
+        Command::Set {
+            color,
+            brightness,
+            correction,
+        } => {
+            let mut config: LightingConfig = controller.get()?;
+            config.enabled = true;
+            config.color = color;
+            config.brightness = brightness;
+            if let Some(correction) = correction {
+                config.correction = Some(correction);
+            }
+            let config: LightingConfig = controller.set(config)?;
             println!("{}", serde_json::to_string_pretty(&config)?);
         }
         Command::Off => {

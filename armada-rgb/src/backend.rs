@@ -1,6 +1,6 @@
 //! Hardware backends for RGB lighting.
 
-use crate::LightingConfig;
+use crate::{ColorCorrection, LightingConfig};
 use anyhow::{bail, Context, Result};
 use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
@@ -8,6 +8,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub enum LightingBackend {
+    Channels(ChannelBackend),
     Multicolor(MulticolorBackend),
     Unsupported(String),
 }
@@ -15,6 +16,7 @@ pub enum LightingBackend {
 impl LightingBackend {
     pub fn apply(&self, config: &LightingConfig) -> Result<()> {
         match self {
+            Self::Channels(backend) => backend.apply(config),
             Self::Multicolor(backend) => backend.apply(config),
             Self::Unsupported(reason) => bail!("{reason}"),
         }
@@ -22,20 +24,115 @@ impl LightingBackend {
 
     pub fn unsupported_reason(&self) -> Option<&str> {
         match self {
-            Self::Multicolor(_) => None,
+            Self::Channels(_) | Self::Multicolor(_) => None,
             Self::Unsupported(reason) => Some(reason),
         }
+    }
+
+    pub(crate) fn default_correction(&self) -> Option<ColorCorrection> {
+        match self {
+            Self::Channels(backend) => backend.correction.clone(),
+            Self::Multicolor(backend) => backend.correction.clone(),
+            Self::Unsupported(_) => None,
+        }
+    }
+}
+
+pub struct ChannelBackend {
+    root: PathBuf,
+    targets: Vec<String>,
+    correction: Option<ColorCorrection>,
+}
+
+impl ChannelBackend {
+    pub fn new(root: PathBuf, targets: Vec<String>) -> Self {
+        Self {
+            root,
+            targets,
+            correction: None,
+        }
+    }
+
+    pub(crate) fn with_correction(mut self, correction: Option<ColorCorrection>) -> Self {
+        self.correction = correction;
+        self
+    }
+
+    fn apply(&self, config: &LightingConfig) -> Result<()> {
+        let mut targets: Vec<PreparedChannel> = self.prepare(config)?;
+
+        if let Err(error) = write_channels(&mut targets) {
+            blank_channels_best_effort(&targets);
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    fn prepare(&self, config: &LightingConfig) -> Result<Vec<PreparedChannel>> {
+        let [red, green, blue]: [u8; 3] = corrected_rgb(config, self.correction.as_ref());
+        let mut channels: Vec<(String, u8)> = Vec::new();
+
+        for target in &self.targets {
+            let (channel, name): (&str, &str) = target
+                .split_once('=')
+                .with_context(|| format!("invalid RGB channel target '{target}'"))?;
+            let value: u8 = match channel {
+                "red" => red,
+                "green" => green,
+                "blue" => blue,
+                _ => bail!("invalid RGB channel '{channel}'"),
+            };
+            channels.push((name.into(), value));
+        }
+
+        let names: Vec<String> = channels.iter().map(|(name, _)| name.clone()).collect();
+        validate_names(&names)?;
+
+        let mut targets: Vec<PreparedChannel> = Vec::new();
+
+        for (name, channel) in channels {
+            let path: PathBuf = self.root.join(&name);
+            let brightness_path: PathBuf = path.join("brightness");
+            let brightness: File = OpenOptions::new()
+                .write(true)
+                .open(&brightness_path)
+                .with_context(|| format!("open {name} brightness"))?;
+            let value: u32 = if config.enabled {
+                let maximum: u32 = read_maximum(&path.join("max_brightness"))?;
+                scale(config.brightness, gamma(channel, maximum))
+            } else {
+                0
+            };
+
+            targets.push(PreparedChannel {
+                name,
+                brightness_path,
+                brightness,
+                value: value.to_string(),
+            });
+        }
+        Ok(targets)
     }
 }
 
 pub struct MulticolorBackend {
     root: PathBuf,
     targets: Vec<String>,
+    correction: Option<ColorCorrection>,
 }
 
 impl MulticolorBackend {
     pub fn new(root: PathBuf, targets: Vec<String>) -> Self {
-        Self { root, targets }
+        Self {
+            root,
+            targets,
+            correction: None,
+        }
+    }
+
+    pub(crate) fn with_correction(mut self, correction: Option<ColorCorrection>) -> Self {
+        self.correction = correction;
+        self
     }
 
     fn apply(&self, config: &LightingConfig) -> Result<()> {
@@ -45,10 +142,6 @@ impl MulticolorBackend {
             return blank(&mut targets);
         }
 
-        if let Err(error) = blank(&mut targets) {
-            blank_best_effort(&mut targets);
-            return Err(error);
-        }
         if let Err(error) = write_colors(&mut targets) {
             blank_best_effort(&mut targets);
             return Err(error);
@@ -63,7 +156,7 @@ impl MulticolorBackend {
     fn prepare(&self, config: &LightingConfig) -> Result<Vec<PreparedTarget>> {
         validate_names(&self.targets)?;
         let mut targets: Vec<PreparedTarget> = Vec::new();
-        let rgb: [u8; 3] = config.rgb();
+        let rgb: [u8; 3] = corrected_rgb(config, self.correction.as_ref());
 
         for name in &self.targets {
             let path: PathBuf = self.root.join(name);
@@ -120,6 +213,13 @@ struct PreparedTarget {
     color: Option<(File, String)>,
 }
 
+struct PreparedChannel {
+    name: String,
+    brightness_path: PathBuf,
+    brightness: File,
+    value: String,
+}
+
 fn blank(targets: &mut [PreparedTarget]) -> Result<()> {
     for target in targets {
         write_attr(&mut target.blank, "0")
@@ -132,6 +232,20 @@ fn blank_best_effort(targets: &mut [PreparedTarget]) {
     for target in targets {
         let _ = fs::write(&target.brightness_path, b"0\n");
     }
+}
+
+fn blank_channels_best_effort(targets: &[PreparedChannel]) {
+    for target in targets {
+        let _ = fs::write(&target.brightness_path, b"0\n");
+    }
+}
+
+fn write_channels(targets: &mut [PreparedChannel]) -> Result<()> {
+    for target in targets {
+        write_attr(&mut target.brightness, &target.value)
+            .with_context(|| format!("write {} brightness", target.name))?;
+    }
+    Ok(())
 }
 
 fn write_colors(targets: &mut [PreparedTarget]) -> Result<()> {
@@ -216,6 +330,15 @@ fn channel_value(channel: &str, [red, green, blue]: [u8; 3], maximum: u32) -> u3
         "blue" => gamma(blue, maximum),
         _ => unreachable!("validated channel"),
     }
+}
+
+fn corrected_rgb(config: &LightingConfig, profile: Option<&ColorCorrection>) -> [u8; 3] {
+    let rgb: [u8; 3] = config.rgb();
+    let correction: Option<&ColorCorrection> = config.correction.as_ref().or(profile);
+    let Some(correction) = correction else {
+        return rgb;
+    };
+    correction.apply(rgb)
 }
 
 fn gamma(channel: u8, maximum: u32) -> u32 {

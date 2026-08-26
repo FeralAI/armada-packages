@@ -3,9 +3,11 @@
 mod backend;
 mod config;
 mod controller;
+mod correction;
 mod runtime;
 mod state;
 
-pub use backend::{LightingBackend, MulticolorBackend};
+pub use backend::{ChannelBackend, LightingBackend, MulticolorBackend};
 pub use controller::Controller;
+pub use correction::ColorCorrection;
 pub use state::LightingConfig;
